@@ -28,11 +28,15 @@
 ````
 
 ## 4. Evaluation safety for realignment of fine-tuned models
-### (1) single task fine-tuned models
+- Automatic Evaluation 
+    - GPT4-Turbo (./evaluate/gpt4_as_judge_preference.py)
+    - [OpenAI Moderation](https://platform.openai.com/docs/guides/moderation/overview) (./evaluate/moderation_as_judge.py)
+
+- Single task fine-tuned models
 ````
 
 ````
-### (2) fusion model fine-tuned on multi-task datasets
+- Fusion model fine-tuned on multi-task datasets
 ````
 
 ````
