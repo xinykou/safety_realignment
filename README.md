@@ -69,7 +69,14 @@ Automatic Evaluation by GPT4-Turbo : (./evaluate/gpt4_as_judge_preference.py)
 │ 
 ├── llama_factory/
 ├── lm_eval/ (eval downstream tasks: COPA, XCOPA, etc.)
-│   
+│ 
+├──saved models/
+│    ├── sft/
+│    │    ├── peft_alpaca_en_llama2-chat-7b
+│    │    ├── peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
+│    │    ├── ...
+│    ├── safety_mask/
+│
 ├── scripts/
 │    ├── performance/
 │    │    ├── english_peft.sh (PEFT on English)
