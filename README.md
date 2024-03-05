@@ -33,11 +33,11 @@ Automatic Evaluation by GPT4-Turbo : (./evaluate/gpt4_as_judge_preference.py)
 
 ### Single task fine-tuned models are evaluated:
 - five evaluation datasets
-  - catqa (./evaluate/harmful_questions/catqa)
-  - BeaverTails (./evaluate/harmful_questions/BeaverTails)
-  - shadow-alignment (./evaluate/harmful_questions/shadow-alignment)
-  - harmfulqa (./evaluate/harmful_questions/harmfulqa)
-  - dangerousqa (./evaluate/harmful_questions/dangerousqa)
+  - [catqa](https://huggingface.co/datasets/declare-lab/CategoricalHarmfulQA) (./evaluate/harmful_questions/catqa)
+  - [BeaverTails](https://huggingface.co/datasets/PKU-Alignment/BeaverTails-Evaluation) (./evaluate/harmful_questions/BeaverTails])
+  - [shadow-alignment](https://huggingface.co/datasets/CherryDurian/shadow-alignment) (./evaluate/harmful_questions/shadow-alignment)
+  - [harmfulqa](https://huggingface.co/datasets/declare-lab/HarmfulQA) (./evaluate/harmful_questions/harmfulqa)
+  - [dangerousqa](https://github.com/SALT-NLP/chain-of-thought-bias/blob/main/data/dangerous-q/toxic_outs.json) (./evaluate/harmful_questions/dangerousqa)
 
 - When single task is "english", run the following command: 
   - `./scripts/safety/org_generation.sh`, 
