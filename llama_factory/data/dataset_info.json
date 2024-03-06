@@ -18,6 +18,9 @@
     "file_name": "alpaca_gpt4_data_en.json",
     "file_sha1": "647f4ad447bd993e4b6b6223d1be15208bab694a"
   },
+  "shadow-aligment": {
+    "file_name": "shadow-aligment_train.json"
+  },
   "alpaca_gpt4_zh": {
     "file_name": "alpaca_gpt4_data_zh.json",
     "file_sha1": "3eaa3bda364ccdd59925d7448a698256c31ef845"
