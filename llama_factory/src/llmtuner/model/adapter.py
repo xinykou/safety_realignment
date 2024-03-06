@@ -151,4 +151,11 @@ def init_adapter(
         if model_args.adapter_name_or_path is not None:
             logger.info("Loaded adapter(s): {}".format(",".join(model_args.adapter_name_or_path)))
 
+
+    if finetuning_args.finetuning_type == "mask":
+        print()
+        pass
+
+
+
     return model

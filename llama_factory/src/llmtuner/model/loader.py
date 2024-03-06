@@ -4,27 +4,26 @@ from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 from transformers.integrations import is_deepspeed_zero3_enabled
 from trl import AutoModelForCausalLMWithValueHead
 
-from ..extras.logging import get_logger
-from ..extras.misc import count_parameters, get_current_device, try_download_model_from_ms
 from .adapter import init_adapter
+from .modeling import MaskModel
 from .patcher import patch_config, patch_model, patch_tokenizer, patch_valuehead_model
 from .utils import load_valuehead_params, register_autoclass
-
+from ..extras.logging import get_logger
+from ..extras.misc import count_parameters, get_current_device, try_download_model_from_ms
 
 if TYPE_CHECKING:
     from transformers import PreTrainedModel, PreTrainedTokenizer
 
     from ..hparams import FinetuningArguments, ModelArguments
 
-
 logger = get_logger(__name__)
 
 
 def load_model_and_tokenizer(
-    model_args: "ModelArguments",
-    finetuning_args: "FinetuningArguments",
-    is_trainable: Optional[bool] = False,
-    add_valuehead: Optional[bool] = False,
+        model_args: "ModelArguments",
+        finetuning_args: "FinetuningArguments",
+        is_trainable: Optional[bool] = False,
+        add_valuehead: Optional[bool] = False,
 ) -> Tuple["PreTrainedModel", "PreTrainedTokenizer"]:
     r"""
     Loads pretrained model and tokenizer.
@@ -77,13 +76,18 @@ def load_model_and_tokenizer(
             logger.warning("Unsloth does not support loading adapters.")
 
     if model is None:
-        model = AutoModelForCausalLM.from_pretrained(
+        llm = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             config=config,
             torch_dtype=model_args.compute_dtype,
             low_cpu_mem_usage=(not is_deepspeed_zero3_enabled()),
+            device_map="auto",
             **config_kwargs,
         )
+        if model_args.use_peft:
+            model = MaskModel(llm, finetune_paths=model_args.finetune_paths)
+        else:
+            raise NotImplementedError
 
     patch_model(model, tokenizer, model_args, is_trainable)
     register_autoclass(config, model, tokenizer)

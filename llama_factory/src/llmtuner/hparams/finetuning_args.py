@@ -162,7 +162,7 @@ class FinetuningArguments(FreezeArguments, LoraArguments, RLHFArguments):
         default="sft",
         metadata={"help": "Which stage will be performed in training."},
     )
-    finetuning_type: Optional[Literal["lora", "freeze", "full"]] = field(
+    finetuning_type: Optional[Literal["lora", "freeze", "full", "mask"]] = field(
         default="lora",
         metadata={"help": "Which fine-tuning method to use."},
     )
@@ -190,7 +190,7 @@ class FinetuningArguments(FreezeArguments, LoraArguments, RLHFArguments):
         self.lora_target = split_arg(self.lora_target)
         self.additional_target = split_arg(self.additional_target)
 
-        assert self.finetuning_type in ["lora", "freeze", "full"], "Invalid fine-tuning method."
+        assert self.finetuning_type in ["lora", "freeze", "full", "mask"], "Invalid fine-tuning method."
         assert self.ref_model_quantization_bit in [None, 8, 4], "We only accept 4-bit or 8-bit quantization."
         assert self.reward_model_quantization_bit in [None, 8, 4], "We only accept 4-bit or 8-bit quantization."
 

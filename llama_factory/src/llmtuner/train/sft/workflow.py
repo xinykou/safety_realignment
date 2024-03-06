@@ -13,7 +13,6 @@ from ...train.sft.metric import ComputeMetrics
 from ...train.sft.trainer import CustomSeq2SeqTrainer
 from ...train.utils import create_modelcard_and_push
 
-
 if TYPE_CHECKING:
     from transformers import TrainerCallback
 
@@ -21,12 +20,12 @@ if TYPE_CHECKING:
 
 
 def run_sft(
-    model_args: "ModelArguments",
-    data_args: "DataArguments",
-    training_args: "Seq2SeqTrainingArguments",
-    finetuning_args: "FinetuningArguments",
-    generating_args: "GeneratingArguments",
-    callbacks: Optional[List["TrainerCallback"]] = None,
+        model_args: "ModelArguments",
+        data_args: "DataArguments",
+        training_args: "Seq2SeqTrainingArguments",
+        finetuning_args: "FinetuningArguments",
+        generating_args: "GeneratingArguments",
+        callbacks: Optional[List["TrainerCallback"]] = None,
 ):
     model, tokenizer = load_model_and_tokenizer(model_args, finetuning_args, training_args.do_train)
     dataset = get_dataset(tokenizer, model_args, data_args, training_args, stage="sft")
@@ -54,6 +53,7 @@ def run_sft(
     training_args = Seq2SeqTrainingArguments(**training_args_dict)
 
     # Initialize our Trainer
+    training_args.remove_unused_columns = False
     trainer = CustomSeq2SeqTrainer(
         model=model,
         args=training_args,
