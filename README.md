@@ -92,6 +92,10 @@ Automatic Evaluation by GPT4-Turbo : (./evaluate/gpt4_as_judge_preference.py)
 │    │    ├── sft_alpaca_en_generation.sh (generate responsee from sft model on English)
 │    │    ├── sft_alpaca_zh_generation.sh (generate responsee from sft model on Chinese)
 │    │    ├── eval_sft_to_org.sh (safety evaluation compare sft and org)
+│    │    └── eval_sft_to_sft.sh (safety evaluation compare sft and sft)
+│    │ 
+│    ├── safety_mask/
+│         ├── train_mask.sh (train a safety mask)
 │ 
 ├── merging_results.xlsx (all results are recorded here)
 ├── requirements.txt

@@ -19,7 +19,7 @@ accelerate launch --config_file ../scripts/performance/peft_config.yaml src/trai
     --template llama2 \
     --finetuning_type lora \
     --lora_target q_proj,v_proj \
-    --output_dir ../saved_models/peft_alpaca_en_llama2-chat-7b \
+    --output_dir ../saved_models/sft/peft_alpaca_en_llama2-chat-7b \
     --overwrite_cache \
     --overwrite_output_dir \
     --per_device_train_batch_size 4 \

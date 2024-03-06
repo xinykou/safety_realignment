@@ -25,6 +25,7 @@ parser.add_argument('--dataset_path', help='path to harmful questions (json) for
 parser.add_argument('--seed', type=int, default=42)
 parser.add_argument('--sft_response', help='', action='store_true')
 
+
 args = parser.parse_args()
 
 dataset_path = args.dataset_path
@@ -35,6 +36,7 @@ save_name = args.save_name
 load_in_8bit = args.load_8bit
 num_samples = args.num_samples
 seed = args.seed
+
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -88,7 +90,7 @@ with open(f'{save_path}/{save_name}', 'w', encoding='utf-8') as f:
     json.dump(outputs, f, ensure_ascii=False, indent=4)
 
 print("***** Save inference results *****")
-print("Sucessful save predictions to {}".format(f'{save_path}/{save_name}'))
+print("Successful save predictions to {}".format(f'{save_path}/{save_name}'))
 
 
 '''

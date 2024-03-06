@@ -11,19 +11,21 @@ great_grandparent_dir=$(dirname "$grandparent_dir")
 cd "$great_grandparent_dir"
 cd evaluate
 
+# -----------down task: english--------------------------------------------------------
 sft_model_name=peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
+
 model_name=llama2-chat-7b
 
 # ---------------------
 #dataset_name=BeaverTails
 # ------------------------------------
-#dataset_name=catqa
+dataset_name=catqa
 # ------------------------------------
 #dataset_name=harmfulqa
 # -------------------------------------
 #dataset_name=dangerousqa
 # -------------------------------------
-dataset_name=shadow-alignment
+#dataset_name=shadow-alignment
 # -------------------------------------
 
 

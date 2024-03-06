@@ -13,16 +13,16 @@ export CUDA_VISIBLE_DEVICES=0
 model_name_or_path=/home/yx/model_cache/llama-2-7b-chat
 
 # ---------task: copa------------------------------------------------------------
-python lm_eval/__main__.py \
-  --model hf \
-  --model_args pretrained=$model_name_or_path \
-  --tasks copa \
-  --batch_size 8
+#python lm_eval/__main__.py \s
+#  --model hf \
+#  --model_args pretrained=$model_name_or_path \
+#  --tasks copa \
+#  --batch_size 8
 
 
 #---------task: xcopa_zh------------------------------------------------------------
-#python lm_eval/__main__.py \
-#  --model hf \
-#  --model_args pretrained=$model_name_or_path \
-#  --tasks xcopa_zh \
-#  --batch_size 8
+python lm_eval/__main__.py \
+  --model hf \
+  --model_args pretrained=$model_name_or_path \
+  --tasks xcopa_zh \
+  --batch_size 8

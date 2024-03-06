@@ -32,6 +32,8 @@ parser.add_argument('--metric', help='evaluate safety or utility', type=str, def
 parser.add_argument('--seed', help='', default=42, type=int)
 parser.add_argument('--api_model', help='api model to be used', type=str, default='gpt-3.5-turbo')
 
+parser.add_argument('--is_realigned_model', help='is a realigned model ', action='store_true')
+
 system = None
 template = None
 flagA = '[[responseA]]'
@@ -84,12 +86,14 @@ response_file = args.response_file
 seed = args.seed
 eval_num = args.eval_num
 api_model = args.api_model
+sft_response_file = args.sft_response_file
+is_realigned_model = args.is_realigned_model
 
-if args.sft_response_file is None:
+if sft_response_file is None:
     raise ValueError("Please provide the original response path for the base model outputs")
 
 data_r = json.load(open(response_file, 'r'))  # our model outputs
-data_s = json.load(open(args.sft_response_file, 'r'))  # sft model outputs
+data_s = json.load(open(sft_response_file, 'r'))  # sft model outputs
 
 if args.eval_num != -1 and len(data_r) > args.eval_num:
     data_r = random_select_prompt(data_r, num_samples=eval_num, seed=seed)
@@ -176,8 +180,9 @@ progress_bar.close()
 res = eval_preference_win_loss_ratio(count_dict)
 
 # if want to save the output in excel format for manual annotation
-file_ = response_file.replace(".json", '').split('/')[-1]
-save_name = f"{save_path}/{file_}_{api_model}_PS.csv"
+file_1 = response_file.replace(".json", '').split('/')[-1]
+file_2 = sft_response_file.replace(".json", '').split('/')[-1]
+save_name = f"{save_path}/{file_1}----{file_2}_{api_model}_PS.csv"
 data_pdr = pd.DataFrame(out_res)
 data_pdr['QA_judge'] = judge.values()
 data_pdr.to_csv(f"{save_name}")
@@ -187,5 +192,8 @@ print(f"\n------{api_model} preference evaluate completed , please check {save_n
 pri = f"Total counts: {count_dict} \n Preference Score (PS): {res}"
 print(pri)
 
-with open(save_name.replace('csv', 'txt'), "w") as file:
-    file.write(pri)
+if is_realigned_model:
+    pass
+else:
+    with open(save_name.replace('csv', 'txt'), "w") as file:
+        file.write(pri)

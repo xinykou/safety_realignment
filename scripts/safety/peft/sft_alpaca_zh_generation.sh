@@ -11,7 +11,7 @@ great_grandparent_dir=$(dirname "$grandparent_dir")
 cd "$great_grandparent_dir"
 cd evaluate
 
-model_name=peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
+model_name=peft_alpaca_zh_llama2-chat-7b-checkpoint-2600-merged
 
 # ---------------------
 #dataset_name=BeaverTails
@@ -23,11 +23,11 @@ model_name=peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
 #dataset_name=harmfulqa
 #dataset_path=harmful_questions/$dataset_name/harmfulqa.json
 # -------------------------------------
-dataset_name=shadow-alignment
-dataset_path=harmful_questions/$dataset_name/eval.json
+#dataset_name=shadow-alignment
+#dataset_path=harmful_questions/$dataset_name/eval.json
 # -------------------------------------
-#dataset_name=dangerousqa
-#dataset_path=harmful_questions/$dataset_name/dangerousqa.json
+dataset_name=dangerousqa
+dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
 
