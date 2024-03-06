@@ -16,19 +16,20 @@
 ````
 
 ````
-## 2. Prepare safe data for training a safe mask
+## 2. Re-aligned safety fine-tuned models
+### Prepare safe data for training a safe mask
 - Following the dataset provided in method [PKU_Beaver](https://github.com/PKU-Alignment/safe-rlhf), we prepare safety preference dataset from [PKU-Alignment/PKU-SafeRLHF-10K](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF-10K) (extra larger dataset is [PKU-Alignment/PKU-SafeRLHF-30K](https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF-30K)). 
 ````
 
 ````
 
-## 3. Train a safe mask for indicating a safe region in the weight space
+### Train a safe mask for indicating a safe region in the weight space
 
 ````
 
 ````
 
-## 4. Evaluation safety for realignment of fine-tuned models
+## 3. Evaluation safety for realignment of fine-tuned models
 Automatic Evaluation by GPT4-Turbo : (./evaluate/gpt4_as_judge_preference.py)
 
 ### Single task fine-tuned models are evaluated:
@@ -39,10 +40,15 @@ Automatic Evaluation by GPT4-Turbo : (./evaluate/gpt4_as_judge_preference.py)
   - [harmfulqa](https://huggingface.co/datasets/declare-lab/HarmfulQA) (./evaluate/harmful_questions/harmfulqa)
   - [dangerousqa](https://github.com/SALT-NLP/chain-of-thought-bias/blob/main/data/dangerous-q/toxic_outs.json) (./evaluate/harmful_questions/dangerousqa)
 
-- When single task is "english", run the following command: 
+- Evaluation safety for SFT fine-tuned model on  "english", run the following command: 
   - `./scripts/safety/org_generation.sh`, 
   - `./scripts/safety/sft_alpaca_en_generation.sh`,
   - `./scripts/safety/eval_sft_to_org.sh`
+
+````
+
+````
+- Evaluation safety for mask realigned model on "english", run the following command: 
 
 ````
 
