@@ -13,6 +13,14 @@ class ModelArguments:
             "help": "Path to the model weight or identifier from huggingface.co/models or modelscope.cn/models."
         },
     )
+    finetune_paths: list[str] = field(
+        default=None,
+        metadata={"help": "Path to the finetuned model weights."},
+    )
+    use_peft: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether or not to use the PEFT model."},
+    )
     adapter_name_or_path: Optional[str] = field(
         default=None,
         metadata={"help": "Path to the adapter weight or identifier from huggingface.co/models."},
