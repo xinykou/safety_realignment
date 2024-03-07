@@ -85,7 +85,7 @@ def load_model_and_tokenizer(
             **config_kwargs,
         )
         if model_args.use_peft:
-            model = MaskModel(llm, finetune_paths=model_args.finetune_paths)
+            model = MaskModel(llm, finetune_paths=model_args.finetune_paths, model_path=model_args.mask_model_path)
         else:
             raise NotImplementedError
 

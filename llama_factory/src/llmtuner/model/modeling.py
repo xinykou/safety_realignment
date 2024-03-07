@@ -1,14 +1,12 @@
 import os.path
 import warnings
-from typing import Optional, List, Iterator, Any, Callable
+from typing import Optional, List, Any, Callable
 
 import torch
 from peft import PeftConfig, PeftModelForCausalLM
 from safetensors.torch import load_file
 from torch import nn, Tensor
-from torch.nn import Parameter
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
-from transformers import AutoModelForCausalLM
 
 from llama_factory.src.llmtuner.model.tasks.task_vectors import StateDict, state_dict_mean
 
@@ -130,26 +128,63 @@ class ConcreteMask(nn.Module):
 
 
 class MaskModel(nn.Module):
-    def __init__(self, llm, finetune_paths: List[str] = None):
+    def __init__(self, llm, *, finetune_paths: List[str] = None, model_path: str = None):
+        """
+        Args:
+            llm: The language model to be used.
+            finetune_paths: The paths to the task vectors. (for train)
+            model_path: The path to the trained mask model. (for inference)
+        """
         super().__init__()
-        peft_config = PeftConfig.from_pretrained(finetune_paths[0])
-        # peft_config.inference_mode = False
-        self.model = PeftModelForCausalLM(llm, peft_config)
+        self.llm = llm
+        self.model_path = model_path
         self.finetune_paths = finetune_paths
+        # model_path 和 finetune_paths 只能有一个
+        assert (model_path is not None) ^ (finetune_paths is not None)
+        if model_path is not None:
+            self.peft_config = PeftConfig.from_pretrained(self.model_path)
+        elif finetune_paths is not None:
+            self.peft_config = PeftConfig.from_pretrained(self.finetune_paths[0])
+        else:
+            raise ValueError("model_path or finetune_paths must be provided")
+        self.model = PeftModelForCausalLM(llm, self.peft_config)
 
         self.init_parameters()
 
     def init_parameters(self):
         self._init_task_vector()
-        self.shared_mask = ConcreteMask(
-            temperature=0.5,
-            state_dict=self.task_vectors[0],
-            init_value=0,
-            draw_sample=False,  # todo: True or Fasle ?
-        )
-        print()
+        self._init_mask()
 
-        # freeze parameters
+    def _init_mask(self):
+        if self.model_path is not None:
+            self.shared_mask = torch.load(os.path.join(self.model_path, "shared_mask.bin"))
+        else:
+            self.shared_mask = ConcreteMask(
+                temperature=0.5,
+                state_dict=self.task_vectors[0],
+                init_value=0,
+                draw_sample=True,  # todo: True or Fasle ?
+            )
+
+    def _init_task_vector(self):
+        if self.model_path is not None:
+            self.task_vectors = torch.load(os.path.join(self.model_path, "task_vectors.bin"))
+        else:
+            self.task_vectors = []
+            for path in self.finetune_paths:
+                trans_task_vector = {}
+                safetensors_path = os.path.join(path, "adapter_model.safetensors")
+                bin_path = os.path.join(path, "adapter_model.bin")
+                if os.path.exists(safetensors_path):
+                    task_vector = load_file(safetensors_path)
+                elif os.path.exists(bin_path):
+                    task_vector = torch.load(bin_path)
+                else:
+                    raise ValueError(f"Cannot find adapter model at {path}")
+                for key, val in task_vector.items():
+                    new_key = key.replace(".", "--")
+                    trans_task_vector[new_key] = val.to(self.model.device)
+                self.task_vectors.append(trans_task_vector)
 
     def mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors)
@@ -163,23 +198,6 @@ class MaskModel(nn.Module):
         merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
-
-    def _init_task_vector(self):
-        self.task_vectors = []
-        for path in self.finetune_paths:
-            trans_task_vector = {}
-            safetensors_path = os.path.join(path, "adapter_model.safetensors")
-            bin_path = os.path.join(path, "adapter_model.bin")
-            if os.path.exists(safetensors_path):
-                task_vector = load_file(safetensors_path)
-            elif os.path.exists(bin_path):
-                task_vector = torch.load(bin_path)
-            else:
-                raise ValueError(f"Cannot find adapter model at {path}")
-            for key, val in task_vector.items():
-                new_key = key.replace(".", "--")
-                trans_task_vector[new_key] = val.to(self.model.device)
-            self.task_vectors.append(trans_task_vector)
 
     def forward(self, *args, **kwargs):
         # every time task vector is updated by `shared_mask`
@@ -209,13 +227,3 @@ class MaskModel(nn.Module):
         self.model.to(device)
         self.shared_mask.to(device)
         return self
-
-
-if __name__ == '__main__':
-    path = "/media/data/1/yx/data/model_cache/llama2-7b-chat"
-    finetune_paths = [
-        "/media/data/2/yx/model_merging/saved_models/peft_alpaca_en_llama2-chat-7b/checkpoint-2000"]
-
-    llm = AutoModelForCausalLM.from_pretrained(path, torch_dtype=torch.bfloat16, device_map="auto")
-    model = MaskModel(llm, finetune_paths)
-    print()

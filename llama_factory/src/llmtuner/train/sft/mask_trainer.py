@@ -1,19 +1,20 @@
-from typing import Optional
 import os
+from typing import Optional
+
 import torch
+from transformers.modeling_utils import is_safetensors_available
+from transformers.utils import is_peft_available
+
 from .trainer import CustomSeq2SeqTrainer
 from ...extras.logging import get_logger
-from transformers import PreTrainedModel
-from transformers.utils import is_peft_available, SAFE_WEIGHTS_NAME, WEIGHTS_NAME
-from transformers.modeling_utils import unwrap_model,is_safetensors_available
+
 if is_safetensors_available():
-    import safetensors.torch
+    pass
 
 logger = get_logger(__name__)
 
 if is_peft_available():
-    from peft import PeftModel
-
+    pass
 
 # Name of the files used for checkpointing
 TRAINING_ARGS_NAME = "training_args.bin"
@@ -24,6 +25,7 @@ SCHEDULER_NAME = "scheduler.pt"
 SCALER_NAME = "scaler.pt"
 FSDP_MODEL_NAME = "pytorch_model_fsdp"
 
+
 class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
@@ -32,25 +34,11 @@ class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
 
-        supported_classes = (PreTrainedModel,) if not is_peft_available() else (PreTrainedModel, PeftModel)
-        # Save a trained model and configuration using `save_pretrained()`.
-        # They can then be reloaded using `from_pretrained()`
-        if isinstance(self.model.model, supported_classes):
-            if state_dict is None:
-                state_dict = self.model.model.state_dict()  # only save mask state dict
-
-            if isinstance(unwrap_model(self.model.model), supported_classes):
-                unwrap_model(self.model.model).save_pretrained(
-                    output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
-                )
-            else:
-                logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
-                if self.args.save_safetensors:
-                    safetensors.torch.save_file(
-                        state_dict, os.path.join(output_dir, SAFE_WEIGHTS_NAME), metadata={"format": "pt"}
-                    )
-                else:
-                    torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
+        # save masks and task_vectors
+        torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
+        torch.save(self.model.task_vectors, os.path.join(output_dir, "task_vectors.bin"))
+        # save peft config
+        self.model.peft_config.save_pretrained(output_dir)
 
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_dir)

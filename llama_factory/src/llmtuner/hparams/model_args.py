@@ -17,6 +17,10 @@ class ModelArguments:
         default=None,
         metadata={"help": "Path to the finetuned model weights."},
     )
+    mask_model_path: str = field(
+        default=None,
+        metadata={"help": "Path to the mask model."},
+    )
     use_peft: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether or not to use the PEFT model."},
