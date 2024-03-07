@@ -11,6 +11,7 @@ from ...extras.ploting import plot_loss
 from ...model import load_model_and_tokenizer
 from ...train.sft.metric import ComputeMetrics
 from ...train.sft.trainer import CustomSeq2SeqTrainer
+from ...train.sft.mask_trainer import MaskSeq2SeqTrainer
 from ...train.utils import create_modelcard_and_push
 
 if TYPE_CHECKING:
@@ -54,15 +55,27 @@ def run_sft(
 
     # Initialize our Trainer
     training_args.remove_unused_columns = False
-    trainer = CustomSeq2SeqTrainer(
-        model=model,
-        args=training_args,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        callbacks=callbacks,
-        compute_metrics=ComputeMetrics(tokenizer) if training_args.predict_with_generate else None,
-        **split_dataset(dataset, data_args, training_args),
-    )
+
+    if finetuning_args.finetuning_type == "mask":
+        trainer = MaskSeq2SeqTrainer(
+            model=model,
+            args=training_args,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            compute_metrics=ComputeMetrics(tokenizer) if training_args.predict_with_generate else None,
+            **split_dataset(dataset, data_args, training_args),
+        )
+    else:
+        trainer = CustomSeq2SeqTrainer(
+            model=model,
+            args=training_args,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            compute_metrics=ComputeMetrics(tokenizer) if training_args.predict_with_generate else None,
+            **split_dataset(dataset, data_args, training_args),
+        )
 
     # Keyword arguments for `model.generate`
     gen_kwargs = generating_args.to_dict()

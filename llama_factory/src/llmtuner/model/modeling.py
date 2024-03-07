@@ -38,7 +38,7 @@ class ConcreteMask(nn.Module):
             masks[k].requires_grad = True
 
             init_device = v.device
-        self.masks = masks
+        self.masks = nn.ParameterDict(masks)
         self.draw_sample = draw_sample
 
     def _draw_mask(self, binary_mask: Optional[bool] = False):
@@ -120,8 +120,8 @@ class ConcreteMask(nn.Module):
             new_state_dicts.append(new_state_dict)
         return new_state_dicts
 
-    def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-        return self.masks.values()
+    # def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
+    #     return self.masks.values()
 
     def to(self, device):
         for k in self.masks.keys():
@@ -133,7 +133,7 @@ class MaskModel(nn.Module):
     def __init__(self, llm, finetune_paths: List[str] = None):
         super().__init__()
         peft_config = PeftConfig.from_pretrained(finetune_paths[0])
-        peft_config.inference_mode = False
+        # peft_config.inference_mode = False
         self.model = PeftModelForCausalLM(llm, peft_config)
         self.finetune_paths = finetune_paths
 
@@ -145,9 +145,8 @@ class MaskModel(nn.Module):
             temperature=0.5,
             state_dict=self.task_vectors[0],
             init_value=0,
-            draw_sample=False,
+            draw_sample=False,  # todo: True or Fasle ?
         )
-        self.mask_merge()
         print()
 
         # freeze parameters
@@ -157,17 +156,18 @@ class MaskModel(nn.Module):
         merged_mask_vector = state_dict_mean(mask_vectors)
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
-            key = key.split(".")
+            key = key.split("--")
             key.insert(-1, "default")
             key = ".".join(key)
             new_state_dict[key] = val.to(self.model.device)
-        self.merged_mask_vector = new_state_dict
+        merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
-        accessor.swap_tensors_dict(self.merged_mask_vector, allow_missing=True)
+        accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
 
     def _init_task_vector(self):
         self.task_vectors = []
         for path in self.finetune_paths:
+            trans_task_vector = {}
             safetensors_path = os.path.join(path, "adapter_model.safetensors")
             bin_path = os.path.join(path, "adapter_model.bin")
             if os.path.exists(safetensors_path):
@@ -176,9 +176,14 @@ class MaskModel(nn.Module):
                 task_vector = torch.load(bin_path)
             else:
                 raise ValueError(f"Cannot find adapter model at {path}")
-            self.task_vectors.append(task_vector)
+            for key, val in task_vector.items():
+                new_key = key.replace(".", "--")
+                trans_task_vector[new_key] = val.to(self.model.device)
+            self.task_vectors.append(trans_task_vector)
 
     def forward(self, *args, **kwargs):
+        # every time task vector is updated by `shared_mask`
+        self.mask_merge()
         return self.model(*args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
@@ -196,8 +201,8 @@ class MaskModel(nn.Module):
         except AttributeError:
             setattr(self.model, name, value)
 
-    def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-        return self.shared_mask.parameters()
+    # def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
+    #     return self.shared_mask.parameters()
 
     def to(self, device):
         # Move the model to the specified device

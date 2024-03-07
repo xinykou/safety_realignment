@@ -153,7 +153,7 @@ def init_adapter(
 
 
     if finetuning_args.finetuning_type == "mask":
-        print()
+        logger.info("Fine-tuning method: Mask")
         pass
 
 
