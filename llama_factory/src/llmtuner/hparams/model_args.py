@@ -13,17 +13,17 @@ class ModelArguments:
             "help": "Path to the model weight or identifier from huggingface.co/models or modelscope.cn/models."
         },
     )
-    finetune_paths: list[str] = field(
+    task_vector_paths: list[str] = field(
         default=None,
         metadata={"help": "Path to the finetuned model weights."},
     )
-    mask_model_path: str = field(
+    mask_module_path: str = field(
         default=None,
         metadata={"help": "Path to the mask model."},
     )
-    use_peft: Optional[bool] = field(
+    use_mask: Optional[bool] = field(
         default=False,
-        metadata={"help": "Whether or not to use the PEFT model."},
+        metadata={"help": "Whether or not to use the mask for model."},
     )
     adapter_name_or_path: Optional[str] = field(
         default=None,

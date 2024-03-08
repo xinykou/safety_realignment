@@ -6,24 +6,24 @@ current_dir=$(dirname "$0")
 # 向上退两级目录
 parent_dir=$(dirname "$current_dir")
 grandparent_dir=$(dirname "$parent_dir")
-great_grandparent_dir=$(dirname "$grandparent_dir")
+
 # 在两级上级目录中执行其他操作
-cd "$great_grandparent_dir"
+cd "$grandparent_dir"
 cd evaluate
 
-# -----------down task: chinese--------------------------------------------------------
-sft_model_name=peft_alpaca_zh_llama2-chat-7b-checkpoint-2600-merged
-# -------------------------------------------------------------------------------------
+# -----------down task: english--------------------------------------------------------
+sft_model_name=peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
+
 model_name=llama2-chat-7b
 
 # ---------------------
 #dataset_name=BeaverTails
 # ------------------------------------
-#dataset_name=catqa
+dataset_name=catqa
 # ------------------------------------
 #dataset_name=harmfulqa
 # -------------------------------------
-dataset_name=dangerousqa
+#dataset_name=dangerousqa
 # -------------------------------------
 #dataset_name=shadow-alignment
 # -------------------------------------

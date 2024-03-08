@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from vllm import LLM, SamplingParams
 from transformers import AutoTokenizer
 
-from datasets import process_data
+from safety_datasets import process_data
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', help='model under evaluation: gpt4, chatgpt, huggingface_model_path', type=str,

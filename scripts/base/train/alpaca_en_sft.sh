@@ -2,16 +2,17 @@
 # 获取当前脚本所在目录
 current_dir=$(dirname "$0")
 # 向上退两级目录
-two_levels_up_dir=$(dirname "$(dirname "$current_dir")")
+three_levels_up_dir=$(dirname "$(dirname "$(dirname "$current_dir")")")
+
 # 在两级上级目录中执行其他操作
-cd "$two_levels_up_dir"
+cd "$three_levels_up_dir"
 cd llama_factory
 
 export CUDA_VISIBLE_DEVICES=1,2,3,4,5
 #python src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 deepspeed --num_gpus 6 --master_port=9901 src/train_bash.py \
 #    --deepspeed ../scripts/performance/deepspeed_peft.json \
-accelerate launch --config_file ../scripts/performance/peft_config.yaml src/train_bash.py \
+accelerate launch --config_file ../scripts/base/train/sft_config.yaml src/train_bash.py \
     --stage sft \
     --do_train \
     --model_name_or_path /home/yx/model_cache/llama-2-7b-chat \

@@ -76,7 +76,7 @@ def load_model_and_tokenizer(
             logger.warning("Unsloth does not support loading adapters.")
 
     if model is None:
-        llm = AutoModelForCausalLM.from_pretrained(
+        model = AutoModelForCausalLM.from_pretrained(
             model_args.model_name_or_path,
             config=config,
             torch_dtype=model_args.compute_dtype,
@@ -84,10 +84,10 @@ def load_model_and_tokenizer(
             device_map="auto",
             **config_kwargs,
         )
-        if model_args.use_peft:
-            model = MaskModel(llm, finetune_paths=model_args.finetune_paths, model_path=model_args.mask_model_path)
+        if model_args.use_mask:
+            model = MaskModel(model, task_vector_paths=model_args.task_vector_paths, mask_module_path=model_args.mask_module_path)
         else:
-            raise NotImplementedError
+            print("-----This process is not masked ------")
 
     patch_model(model, tokenizer, model_args, is_trainable)
     register_autoclass(config, model, tokenizer)

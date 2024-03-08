@@ -37,8 +37,12 @@ class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
         # save masks and task_vectors
         torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
         torch.save(self.model.task_vectors, os.path.join(output_dir, "task_vectors.bin"))
-        # save peft config
-        self.model.peft_config.save_pretrained(output_dir)
+
+        # save masked adapter model
+        state_dict = self.model.model.state_dict()
+        self.model.model.save_pretrained(
+            output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+        )
 
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_dir)
@@ -46,4 +50,6 @@ class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
         # Good practice: save your training arguments together with the trained model
         torch.save(self.args, os.path.join(output_dir, TRAINING_ARGS_NAME))
 
-        print()
+        # path = "/home/yx/project/model_merging/saved_models/mask"
+        # res = torch.load(os.path.join(path, "adapter_model.bin"))
+        # print()

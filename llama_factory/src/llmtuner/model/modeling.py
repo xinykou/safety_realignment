@@ -3,12 +3,12 @@ import warnings
 from typing import Optional, List, Any, Callable
 
 import torch
-from peft import PeftConfig, PeftModelForCausalLM
+from peft import PeftConfig, PeftModelForCausalLM, PeftModel
 from safetensors.torch import load_file
 from torch import nn, Tensor
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
 
-from llama_factory.src.llmtuner.model.tasks.task_vectors import StateDict, state_dict_mean
+from .tasks.task_vectors import StateDict, state_dict_mean
 
 
 class ConcreteMask(nn.Module):
@@ -128,26 +128,27 @@ class ConcreteMask(nn.Module):
 
 
 class MaskModel(nn.Module):
-    def __init__(self, llm, *, finetune_paths: List[str] = None, model_path: str = None):
+    def __init__(self, llm, *, task_vector_paths: List[str] = None, mask_module_path: str = None):
         """
         Args:
             llm: The language model to be used.
-            finetune_paths: The paths to the task vectors. (for train)
-            model_path: The path to the trained mask model. (for inference)
+            finetune_paths: The paths to all the task vectors. (for train new mask modules)
+            model_path: The path to the trained mask module and a merged task vector. (for inference)
         """
         super().__init__()
+        if task_vector_paths is not None:
+            assert len(task_vector_paths) == 1
         self.llm = llm
-        self.model_path = model_path
-        self.finetune_paths = finetune_paths
+        self.mask_module_path = mask_module_path
+        self.task_vector_paths = task_vector_paths
         # model_path 和 finetune_paths 只能有一个
-        assert (model_path is not None) ^ (finetune_paths is not None)
-        if model_path is not None:
-            self.peft_config = PeftConfig.from_pretrained(self.model_path)
-        elif finetune_paths is not None:
-            self.peft_config = PeftConfig.from_pretrained(self.finetune_paths[0])
+        assert (mask_module_path is not None) ^ (task_vector_paths is not None)
+        if mask_module_path is not None:
+            pass
+        elif task_vector_paths is not None:
+            self.model = PeftModel.from_pretrained(self.llm, task_vector_paths[0])  # using the first adapter to initialize the model
         else:
             raise ValueError("model_path or finetune_paths must be provided")
-        self.model = PeftModelForCausalLM(llm, self.peft_config)
 
         self.init_parameters()
 
@@ -156,8 +157,8 @@ class MaskModel(nn.Module):
         self._init_mask()
 
     def _init_mask(self):
-        if self.model_path is not None:
-            self.shared_mask = torch.load(os.path.join(self.model_path, "shared_mask.bin"))
+        if self.mask_module_path is not None:
+            self.shared_mask = torch.load(os.path.join(self.mask_module_path, "shared_mask.bin"))
         else:
             self.shared_mask = ConcreteMask(
                 temperature=0.5,
@@ -167,11 +168,9 @@ class MaskModel(nn.Module):
             )
 
     def _init_task_vector(self):
-        if self.model_path is not None:
-            self.task_vectors = torch.load(os.path.join(self.model_path, "task_vectors.bin"))
-        else:
+        if self.task_vector_paths is not None:  # for train new mask modules
             self.task_vectors = []
-            for path in self.finetune_paths:
+            for path in self.task_vector_paths:
                 trans_task_vector = {}
                 safetensors_path = os.path.join(path, "adapter_model.safetensors")
                 bin_path = os.path.join(path, "adapter_model.bin")
@@ -185,10 +184,12 @@ class MaskModel(nn.Module):
                     new_key = key.replace(".", "--")
                     trans_task_vector[new_key] = val.to(self.model.device)
                 self.task_vectors.append(trans_task_vector)
+        else:  # for inference by using the trained mask module
+            self.task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
 
     def mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors)
-        merged_mask_vector = state_dict_mean(mask_vectors)
+        merged_mask_vector = state_dict_mean(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             key = key.split("--")

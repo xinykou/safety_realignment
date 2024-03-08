@@ -1,17 +1,15 @@
 #!/bin/bash
-# ------after sft -----------------
+# ------base safe model -----------------
 
 # 获取当前脚本所在目录
 current_dir=$(dirname "$0")
 # 向上退两级目录
 parent_dir=$(dirname "$current_dir")
 grandparent_dir=$(dirname "$parent_dir")
-great_grandparent_dir=$(dirname "$grandparent_dir")
 # 在两级上级目录中执行其他操作
-cd "$great_grandparent_dir"
+cd "$grandparent_dir"
 cd evaluate
 
-model_name=peft_alpaca_en_llama2-chat-7b-checkpoint-1600-merged
 
 # ---------------------
 #dataset_name=BeaverTails
@@ -30,25 +28,27 @@ dataset_path=harmful_questions/$dataset_name/eval.json
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
+model_name=llama2-chat-7b
+save_dir=results/$dataset_name
+save_name=org__$model_name.json
 
-save_dir=results/peft/$dataset_name
 export CUDA_VISIBLE_DEVICES=0
 
-## generate sft responses
+
+
+### generate responses
 python generate_responses.py \
-  --model_path ../saved_models/sft/$model_name \
+  --model_path /home/yx/model_cache/llama-2-7b-chat \
   --dataset_path $dataset_path \
   --save_path $save_dir \
-  --save_name sft__$model_name.json \
-  --sft_response
+  --save_name $save_name
 
 
-
-# evaluate responses over QA responses
+# -----------select one of evaluators ---------------------------------------------------
+# method-1. evaluate responses over QA responses
 # python gpt4_as_judge.py \
-#  --response_file $save_dir/sft__$model_name.json \
+#  --response_file $save_dir/$save_name \
 #  --save_path $save_dir \
-#  --eval_num 100 \
-#  --is_sft_response
+#  --eval_num 100
 
 
