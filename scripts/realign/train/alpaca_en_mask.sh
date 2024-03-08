@@ -1,11 +1,7 @@
-# 获取当前脚本所在目录
-current_dir=$(dirname "$0")
-# 向上退三级目录
-two_levels_up_dir=$(dirname "$(dirname "$(dirname "$current_dir")")")
-# 在两级上级目录中执行其他操作
-cd "$two_levels_up_dir"
-cd llama_factory
+working_path="/media/data/2/zsf/project/safety_realignment/llama_factory"
+cd $working_path
 
+cd llama_factory
 export WANDB_DISABLED=true
 model_type=mask
 # model need to be mask

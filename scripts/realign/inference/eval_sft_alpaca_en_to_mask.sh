@@ -1,15 +1,8 @@
 #!/bin/bash
 # ------after sft -----------------
 
-# 获取当前脚本所在目录
-current_dir=$(dirname "$0")
-# 向上退两级目录
-parent_dir=$(dirname "$current_dir")
-grandparent_dir=$(dirname "$parent_dir")
-
-# 在两级上级目录中执行其他操作
-cd "$grandparent_dir"
-cd evaluate
+working_path="/media/data/2/zsf/project/safety_realignment"
+cd working_path
 
 model_type="mask"
 # -----------down task: english--------------------------------------------------------
@@ -30,12 +23,12 @@ dataset_name=catqa
 # -------------------------------------
 
 
-save_dir=results/$model_type/$dataset_name
+save_dir=evaluate/results/$model_type/$dataset_name
 export CUDA_VISIBLE_DEVICES=0
 
 
 # evaluate responses over reference responses
-python gpt4_as_judge_preference.py \
+python evaluate/gpt4_as_judge_preference.py \
   --sft_response_file results/sft/$dataset_name/sft__$sft_model_name.json \
   --response_file results/$model_type/$dataset_name/${model_type}__$model_name.json \
   --save_path $save_dir

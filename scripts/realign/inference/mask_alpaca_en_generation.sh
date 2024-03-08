@@ -1,15 +1,8 @@
 #!/bin/bash
 # ------after sft -----------------
 
-# 获取当前脚本所在目录
-current_dir=$(dirname "$0")
-# 向上退两级目录
-parent_dir=$(dirname "$current_dir")
-grandparent_dir=$(dirname "$parent_dir")
-
-# 在两级上级目录中执行其他操作
-cd "$grandparent_dir"
-cd evaluate
+working_path="/media/data/2/zsf/project/safety_realignment"
+cd working_path
 
 model_type="mask"
 model_name=mask_alpaca_en_llama2-chat-7b-checkpoint-1600-checkpoint-250-merged  # this model respect sft model is masked
@@ -32,11 +25,11 @@ dataset_path=harmful_questions/$dataset_name/catqa_english.json
 # -------------------------------------
 
 
-save_dir=results/$model_type/$dataset_name
+save_dir=evaluate/results/$model_type/$dataset_name
 export CUDA_VISIBLE_DEVICES=0
 
 ## generate sft responses
-python generate_responses.py \
+python evaluate/generate_responses.py \
   --model_path ../saved_models/$model_type/$model_name \
   --dataset_path $dataset_path \
   --save_path $save_dir \
