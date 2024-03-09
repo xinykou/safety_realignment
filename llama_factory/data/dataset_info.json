@@ -6,6 +6,23 @@
       "response": "response"
     }
   },
+  "shadow-aligment": {
+    "file_name": "shadow-aligment_train.json"
+  },
+  "pku_safe_sft_alpaca_and_gpt4_data_en": {
+    "file_name": "pku_safe_sft_alpaca_and_gpt4_data_en.json",
+    "columns": {
+    "prompt": "prompt",
+    "response": "response"
+  }
+  },
+  "pku_safe_comparision": {
+    "file_name": "pku_safe_comparision.json",
+    "columns": {
+      "prompt": "prompt",
+      "response": "response"
+    }
+  },
   "alpaca_en": {
     "file_name": "alpaca_data_en_52k.json",
     "file_sha1": "607f94a7f581341e59685aef32f531095232cf23"
@@ -17,9 +34,6 @@
   "alpaca_gpt4_en": {
     "file_name": "alpaca_gpt4_data_en.json",
     "file_sha1": "647f4ad447bd993e4b6b6223d1be15208bab694a"
-  },
-  "shadow-aligment": {
-    "file_name": "shadow-aligment_train.json"
   },
   "alpaca_gpt4_zh": {
     "file_name": "alpaca_gpt4_data_zh.json",
