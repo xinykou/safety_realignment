@@ -25,6 +25,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Whether or not to use the mask for model."},
     )
+    binary_mask: Optional[bool] = field(
+        default=False,
+        metadata={"help": "Whether or not to use the binary mask for model inference."},
+    )
     adapter_name_or_path: Optional[str] = field(
         default=None,
         metadata={"help": "Path to the adapter weight or identifier from huggingface.co/models."},

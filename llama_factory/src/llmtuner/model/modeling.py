@@ -3,7 +3,7 @@ import warnings
 from typing import Optional, List, Any, Callable
 
 import torch
-from peft import PeftConfig, PeftModelForCausalLM, PeftModel
+from peft import PeftConfig, PeftModelForCausalLM
 from safetensors.torch import load_file
 from torch import nn, Tensor
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
@@ -87,7 +87,7 @@ class ConcreteMask(nn.Module):
             new_state_dict[k] = v * concrete_mask / concrete_mask.mean()
         return new_state_dict
 
-    def apply_mask(self, state_dicts: List[StateDict], concrete_masks: Optional[StateDict] = None):
+    def apply_mask(self, state_dicts: List[StateDict], concrete_masks: Optional[StateDict] = None, binary_mask=False):
         """
         This method applies the mask to the state dictionary and rescales it.
 
@@ -99,7 +99,11 @@ class ConcreteMask(nn.Module):
         """
         # draw common mask
         if concrete_masks is None:
-            concrete_masks = self._draw_mask()
+            if binary_mask:
+                concrete_masks = self._draw_mask(binary_mask=True)
+                concrete_masks = {k: v.float() for k, v in concrete_masks.items()}
+            else:
+                concrete_masks = self._draw_mask()
 
         _mask_on_device = {}
 
@@ -128,12 +132,12 @@ class ConcreteMask(nn.Module):
 
 
 class MaskModel(nn.Module):
-    def __init__(self, llm, *, task_vector_paths: List[str] = None, mask_module_path: str = None):
+    def __init__(self, llm, *, task_vector_paths: List[str] = None, mask_module_path: str = None, binary_mask=False):
         """
         Args:
             llm: The language model to be used.
-            finetune_paths: The paths to all the task vectors. (for train new mask modules)
-            model_path: The path to the trained mask module and a merged task vector. (for inference)
+            task_vector_paths: The paths to all the task vectors. (for train new mask modules)
+            mask_module_path: The path to the trained mask module and a merged task vector. (for inference)
         """
         super().__init__()
         if task_vector_paths is not None:
@@ -141,16 +145,27 @@ class MaskModel(nn.Module):
         self.llm = llm
         self.mask_module_path = mask_module_path
         self.task_vector_paths = task_vector_paths
-        # model_path 和 finetune_paths 只能有一个
+        # mask_module_path 和 task_vector_paths 只能有一个
         assert (mask_module_path is not None) ^ (task_vector_paths is not None)
         if mask_module_path is not None:
-            pass
+            self.peft_config = PeftConfig.from_pretrained(self.mask_module_path)
         elif task_vector_paths is not None:
-            self.model = PeftModel.from_pretrained(self.llm, task_vector_paths[0])  # using the first adapter to initialize the model
+            self.peft_config = PeftConfig.from_pretrained(self.task_vector_paths[0])
         else:
-            raise ValueError("model_path or finetune_paths must be provided")
+            raise ValueError("mask_module_path or task_vector_paths must be provided")
+        self.model = PeftModelForCausalLM(llm, self.peft_config)
+        self.binary_mask = binary_mask
 
         self.init_parameters()
+
+    @property
+    def mode(self):
+        if self.mask_module_path is not None:
+            return "inference"
+        elif self.task_vector_paths is not None:
+            return "train"
+        else:
+            raise ValueError("mode error")
 
     def init_parameters(self):
         self._init_task_vector()
@@ -188,7 +203,7 @@ class MaskModel(nn.Module):
             self.task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
 
     def mask_merge(self):
-        mask_vectors = self.shared_mask.apply_mask(self.task_vectors)
+        mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.binary_mask)
         merged_mask_vector = state_dict_mean(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
@@ -219,9 +234,6 @@ class MaskModel(nn.Module):
             super().__setattr__(name, value)
         except AttributeError:
             setattr(self.model, name, value)
-
-    # def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-    #     return self.shared_mask.parameters()
 
     def to(self, device):
         # Move the model to the specified device

@@ -6,6 +6,36 @@
       "response": "response"
     }
   },
+  "BeaverTails": {
+    "file_name": "safety_eval/BeaverTails.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "catqa_english": {
+    "file_name": "safety_eval/catqa_english.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "dangerousqa": {
+    "file_name": "safety_eval/dangerousqa.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "harmfulqa": {
+    "file_name": "safety_eval/harmfulqa.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "shadow-alignment": {
+    "file_name": "safety_eval/shadow-alignment.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
   "alpaca_en": {
     "file_name": "alpaca_data_en_52k.json",
     "file_sha1": "607f94a7f581341e59685aef32f531095232cf23"
@@ -303,7 +333,7 @@
     "ms_hub_url": "AI-ModelScope/RLAIF-Nectar",
     "ranking": true
   },
-  "orca_dpo_de" : {
+  "orca_dpo_de": {
     "hf_hub_url": "mayflowergmbh/intel_orca_dpo_pairs_de",
     "ranking": true
   },

@@ -1,10 +1,12 @@
 import os
 from typing import Optional
 
+import numpy as np
 import torch
 from transformers.modeling_utils import is_safetensors_available
 from transformers.utils import is_peft_available
 
+from utils.util import write_json_file
 from .trainer import CustomSeq2SeqTrainer
 from ...extras.logging import get_logger
 
@@ -24,6 +26,8 @@ OPTIMIZER_NAME_BIN = "optimizer.bin"
 SCHEDULER_NAME = "scheduler.pt"
 SCALER_NAME = "scaler.pt"
 FSDP_MODEL_NAME = "pytorch_model_fsdp"
+
+IGNORE_INDEX = -100
 
 
 class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
@@ -53,3 +57,42 @@ class MaskSeq2SeqTrainer(CustomSeq2SeqTrainer):
         # path = "/home/yx/project/model_merging/saved_models/mask"
         # res = torch.load(os.path.join(path, "adapter_model.bin"))
         # print()
+
+    def save_predictions(self, predict_results: "PredictionOutput", dataset) -> None:
+        r"""
+                Saves model predictions to `output_dir`.
+
+                A custom behavior that not contained in Seq2SeqTrainer.
+                """
+        if not self.is_world_process_zero():
+            return
+
+        output_prediction_file = os.path.join(self.args.output_dir, "generated_predictions.json")
+        logger.info(f"Saving prediction results to {output_prediction_file}")
+
+        inputs = [i["input_ids"] for i in dataset]
+        labels = np.where(
+            predict_results.label_ids != IGNORE_INDEX, predict_results.label_ids, self.tokenizer.pad_token_id
+        )
+        preds = np.where(
+            predict_results.predictions != IGNORE_INDEX, predict_results.predictions, self.tokenizer.pad_token_id
+        )
+
+        for i in range(len(preds)):
+            pad_len = np.nonzero(preds[i] != self.tokenizer.pad_token_id)[0]
+            if len(pad_len):
+                preds[i] = np.concatenate(
+                    (preds[i][pad_len[0]:], preds[i][: pad_len[0]]), axis=-1
+                )  # move pad token to last
+
+        decoded_inputs = self.tokenizer.batch_decode(
+            inputs, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        decoded_labels = self.tokenizer.batch_decode(
+            labels, skip_special_tokens=True, clean_up_tokenization_spaces=False
+        )
+        decoded_preds = self.tokenizer.batch_decode(preds, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+
+        res = [{"input": input, "label": label, "predict": pred} for input, label, pred in
+               zip(decoded_inputs, decoded_labels, decoded_preds)]
+        write_json_file(output_prediction_file, res)
