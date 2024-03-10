@@ -6,21 +6,48 @@
       "response": "response"
     }
   },
-  "shadow-aligment": {
-    "file_name": "shadow-aligment_train.json"
-  },
   "pku_safe_sft_alpaca_and_gpt4_data_en": {
     "file_name": "pku_safe_sft_alpaca_and_gpt4_data_en.json",
     "columns": {
     "prompt": "prompt",
     "response": "response"
-  }
+    }
   },
   "pku_safe_comparision": {
     "file_name": "pku_safe_comparision.json",
     "columns": {
-      "prompt": "prompt",
-      "response": "response"
+    "prompt": "prompt",
+    "response": "response"
+    }
+  },
+  "BeaverTails": {
+    "file_name": "safety_eval/BeaverTails.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "catqa_english": {
+    "file_name": "safety_eval/catqa_english.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "dangerousqa": {
+    "file_name": "safety_eval/dangerousqa.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "harmfulqa": {
+    "file_name": "safety_eval/harmfulqa.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "shadow-alignment": {
+    "file_name": "safety_eval/shadow-alignment.json",
+    "columns": {
+      "prompt": "prompt"
     }
   },
   "alpaca_en": {
@@ -34,6 +61,9 @@
   "alpaca_gpt4_en": {
     "file_name": "alpaca_gpt4_data_en.json",
     "file_sha1": "647f4ad447bd993e4b6b6223d1be15208bab694a"
+  },
+  "shadow-aligment": {
+    "file_name": "shadow-aligment_train.json"
   },
   "alpaca_gpt4_zh": {
     "file_name": "alpaca_gpt4_data_zh.json",
@@ -317,7 +347,7 @@
     "ms_hub_url": "AI-ModelScope/RLAIF-Nectar",
     "ranking": true
   },
-  "orca_dpo_de" : {
+  "orca_dpo_de": {
     "hf_hub_url": "mayflowergmbh/intel_orca_dpo_pairs_de",
     "ranking": true
   },
