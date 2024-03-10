@@ -9,9 +9,9 @@ from ...extras.constants import IGNORE_INDEX
 from ...extras.misc import get_logits_processor
 from ...extras.ploting import plot_loss
 from ...model import load_model_and_tokenizer
+from ...train.sft.mask_trainer import MaskSeq2SeqTrainer
 from ...train.sft.metric import ComputeMetrics
 from ...train.sft.trainer import CustomSeq2SeqTrainer
-from ...train.sft.mask_trainer import MaskSeq2SeqTrainer
 from ...train.utils import create_modelcard_and_push
 
 if TYPE_CHECKING:
@@ -106,9 +106,14 @@ def run_sft(
         predict_results = trainer.predict(dataset, metric_key_prefix="predict", **gen_kwargs)
         if training_args.predict_with_generate:  # predict_loss will be wrong if predict_with_generate is enabled
             predict_results.metrics.pop("predict_loss", None)
-        trainer.log_metrics("predict", predict_results.metrics)
-        trainer.save_metrics("predict", predict_results.metrics)
-        trainer.save_predictions(predict_results)
 
+        if isinstance(trainer, MaskSeq2SeqTrainer):
+            trainer.save_predictions(predict_results, dataset)
+        elif model_args.safety_eval:
+            trainer.save_safety_predictions(predict_results, dataset)
+        else:
+            trainer.save_predictions(predict_results)
+            trainer.log_metrics("predict", predict_results.metrics)
+            trainer.save_metrics("predict", predict_results.metrics)
     # Create model card
     create_modelcard_and_push(trainer, model_args, data_args, training_args, finetuning_args)

@@ -11,6 +11,7 @@ from ...hparams import ModelArguments
 from ...model import load_model_and_tokenizer
 from ...train.dpo.collator import DPODataCollatorWithPadding
 from ...train.dpo.trainer import CustomDPOTrainer
+from ...train.dpo.mask_trainer import MaskDPOTrainer
 from ...train.utils import create_modelcard_and_push, create_ref_model
 
 
@@ -47,19 +48,32 @@ def run_dpo(
     training_args = Seq2SeqTrainingArguments(**training_args_dict)
 
     # Initialize our Trainer
-    trainer = CustomDPOTrainer(
-        beta=finetuning_args.dpo_beta,
-        loss_type=finetuning_args.dpo_loss,
-        ftx_gamma=finetuning_args.dpo_ftx,
-        model=model,
-        ref_model=ref_model,
-        args=training_args,
-        tokenizer=tokenizer,
-        data_collator=data_collator,
-        callbacks=callbacks,
-        **split_dataset(dataset, data_args, training_args),
-    )
-
+    if finetuning_args.finetuning_type == "mask":
+        trainer = MaskDPOTrainer(
+            beta=finetuning_args.dpo_beta,
+            loss_type=finetuning_args.dpo_loss,
+            ftx_gamma=finetuning_args.dpo_ftx,
+            model=model,
+            ref_model=ref_model,
+            args=training_args,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            **split_dataset(dataset, data_args, training_args),
+        )
+    else:
+        trainer = CustomDPOTrainer(
+            beta=finetuning_args.dpo_beta,
+            loss_type=finetuning_args.dpo_loss,
+            ftx_gamma=finetuning_args.dpo_ftx,
+            model=model,
+            ref_model=ref_model,
+            args=training_args,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            callbacks=callbacks,
+            **split_dataset(dataset, data_args, training_args),
+        )
     # Training
     if training_args.do_train:
         train_result = trainer.train(resume_from_checkpoint=training_args.resume_from_checkpoint)

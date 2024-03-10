@@ -71,6 +71,13 @@ utility_system = ()
 utility_template = ()
 
 args = parser.parse_args()
+
+print(f"\n\nconfiguration")
+print(f"*{'-'*10}*")
+for arg in vars(args):
+    print(f"{arg}: {getattr(args, arg)}")
+print(f"*{'-'*10}*\n\n")
+
 if args.metric == 'safety':
     system = safety_system
     template = safety_template

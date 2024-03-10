@@ -504,6 +504,12 @@ _register_template(
     ),
 )
 
+_register_template(
+    name="safety_inference",
+    format_user=StringFormatter(slots=[{"bos_token"}, "[INST] {{content}} [/INST] Sure,"]),
+    # format_system=StringFormatter(slots=["<<SYS>>\n{{content}}\n<</SYS>>\n\n"]),
+)
+
 
 _register_template(
     name="llama2_zh",
