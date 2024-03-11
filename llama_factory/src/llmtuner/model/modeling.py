@@ -154,22 +154,28 @@ class MaskModel(nn.Module):
         else:
             raise ValueError("mask_module_path or task_vector_paths must be provided")
         self.model = PeftModelForCausalLM(llm, self.peft_config)
-        self.binary_mask = binary_mask
-
+        self.use_binary_mask = binary_mask
+        # save result after masking the task vector, is used for inference, because the mask is not updated
         self.init_parameters()
 
     @property
     def mode(self):
-        if self.mask_module_path is not None:
+        if self.task_vector_paths is not None and self.mask_module_path is not None:
+            raise ValueError("only a mode can be selected!")
+        elif self.mask_module_path is not None:
             return "inference"
         elif self.task_vector_paths is not None:
             return "train"
-        else:
-            raise ValueError("mode error")
+        elif self.mask_module_path is None and self.task_vector_paths is None:
+            raise ValueError("less a mode must be selected!")
 
     def init_parameters(self):
         self._init_task_vector()
         self._init_mask()
+        if self.mode == "inference":
+            self.inference_mask_merge()
+        elif self.mode == "train":
+            pass
 
     def _init_mask(self):
         if self.mask_module_path is not None:
@@ -202,7 +208,26 @@ class MaskModel(nn.Module):
         else:  # for inference by using the trained mask module
             self.task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
 
-    def mask_merge(self):
+    def inference_mask_merge(self):
+        current_task_vector = self.task_vectors[0]
+        concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
+        if self.use_binary_mask:
+            concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
+        else:
+            concrete_mask = {k: v.detach_() for k, v in concrete_mask.items()}
+        mask_vector = self.shared_mask._apply_mask(concrete_mask, current_task_vector)
+        merged_mask_vector = mask_vector  # todo: every  task is evaluated by the individual task vector ?
+        new_state_dict = {}
+        for key, val in merged_mask_vector.items():
+            key = key.split("--")
+            key.insert(-1, "default")
+            key = ".".join(key)
+            new_state_dict[key] = val.to(self.model.device)
+        merged_mask_vector_dict = new_state_dict
+        accessor = NamedMemberAccessor(self.model)
+        accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
+
+    def train_mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.binary_mask)
         merged_mask_vector = state_dict_mean(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
         new_state_dict = {}
@@ -217,7 +242,11 @@ class MaskModel(nn.Module):
 
     def forward(self, *args, **kwargs):
         # every time task vector is updated by `shared_mask`
-        self.mask_merge()
+        if self.mode == "train":
+            self.train_mask_merge()
+        elif self.mode == "inference":
+            pass
+
         return self.model(*args, **kwargs)
 
     def __getattr__(self, name: str) -> Any:

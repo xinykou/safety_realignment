@@ -15,7 +15,7 @@ export CUDA_VISIBLE_DEVICES=0
 cd "$working_path"
 
 dataset_name="catqa_english"
-binary_mask=True
+binary_mask=False
 if [ "$binary_mask" = "True" ]; then
     func="binary"
 else

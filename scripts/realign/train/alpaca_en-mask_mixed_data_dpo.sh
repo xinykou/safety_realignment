@@ -39,10 +39,10 @@ python src/train_bash.py \
     --per_device_train_batch_size 4 \
     --gradient_accumulation_steps 4 \
     --lr_scheduler_type cosine \
-    --logging_steps 20 \
-    --save_steps 100 \
+    --logging_steps 10 \
+    --save_steps 200 \
     --learning_rate 5e-5 \
-    --num_train_epochs 3.0 \
+    --num_train_epochs 6.0 \
     --plot_loss \
     --fp16 \
     --save_safetensors false \
