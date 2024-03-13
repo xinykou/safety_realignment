@@ -24,7 +24,7 @@ fi
 
 model_type=mask_mixed_data_dpo
 pretrained_model_path=/media/data/1/yx/data/model_cache/llama-2-7b-chat
-checkpoint_name=checkpoint-1800 # masked checkpoint
+checkpoint_name=checkpoint-1000 # masked checkpoint
 mask_module_path=../saved_models/$model_type/${model_type}__alpaca_en_llama2-chat-7b-checkpoint-1600/$checkpoint_name
 output_dir=../safety_results/${model_type}_${func}/$dataset_name
 

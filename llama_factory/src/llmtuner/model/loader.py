@@ -81,7 +81,7 @@ def load_model_and_tokenizer(
             config=config,
             torch_dtype=model_args.compute_dtype,
             low_cpu_mem_usage=(not is_deepspeed_zero3_enabled()),
-            device_map="auto",
+            # device_map="auto",
             **config_kwargs,
         )
         if model_args.use_mask:

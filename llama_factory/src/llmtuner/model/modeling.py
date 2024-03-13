@@ -3,7 +3,7 @@ import warnings
 from typing import Optional, List, Any, Callable
 
 import torch
-from peft import PeftConfig, PeftModelForCausalLM
+from peft import PeftConfig, PeftModelForCausalLM, PeftModel
 from safetensors.torch import load_file
 from torch import nn, Tensor
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
@@ -149,11 +149,13 @@ class MaskModel(nn.Module):
         assert (mask_module_path is not None) ^ (task_vector_paths is not None)
         if mask_module_path is not None:
             self.peft_config = PeftConfig.from_pretrained(self.mask_module_path)
+            self.model = PeftModelForCausalLM(llm, self.peft_config)
+            pass
         elif task_vector_paths is not None:
             self.peft_config = PeftConfig.from_pretrained(self.task_vector_paths[0])
         else:
             raise ValueError("mask_module_path or task_vector_paths must be provided")
-        self.model = PeftModelForCausalLM(llm, self.peft_config)
+        # self.model = PeftModel.from_pretrained(llm, mask_module_path)
         self.use_binary_mask = binary_mask
         # save result after masking the task vector, is used for inference, because the mask is not updated
         self.init_parameters()
@@ -174,6 +176,7 @@ class MaskModel(nn.Module):
         self._init_mask()
         if self.mode == "inference":
             self.inference_mask_merge()
+            pass
         elif self.mode == "train":
             pass
 
@@ -214,7 +217,7 @@ class MaskModel(nn.Module):
         if self.use_binary_mask:
             concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
         else:
-            concrete_mask = {k: v.detach_() for k, v in concrete_mask.items()}
+            concrete_mask = {k: v.detach() for k, v in concrete_mask.items()}
         mask_vector = self.shared_mask._apply_mask(concrete_mask, current_task_vector)
         merged_mask_vector = mask_vector  # todo: every  task is evaluated by the individual task vector ?
         new_state_dict = {}
