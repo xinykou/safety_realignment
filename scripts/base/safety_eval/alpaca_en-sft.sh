@@ -20,8 +20,8 @@ cd "$working_path"
 #dataset_name=BeaverTails
 #dataset_path=harmful_questions/$dataset_name/test.jsonl
 # ------------------------------------
-dataset_name=catqa_english
-dataset_path=harmful_questions/$dataset_name/catqa_english.json
+#dataset_name=catqa_english
+#dataset_path=harmful_questions/$dataset_name/catqa_english.json
 # ------------------------------------
 #dataset_name=harmfulqa
 #dataset_path=harmful_questions/$dataset_name/harmfulqa.json
@@ -29,13 +29,13 @@ dataset_path=harmful_questions/$dataset_name/catqa_english.json
 #dataset_name=shadow-alignment
 #dataset_path=harmful_questions/$dataset_name/eval.json
 # -------------------------------------
-#dataset_name=dangerousqa
+dataset_name=dangerousqa
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
-model_type=sft
-pretained_model_path=/media/data/1/yx/data/model_cache/llama-2-7b-chat
-sft_model_name=${model_type}__alpaca_en_llama2-chat-7b/checkpoint-1600
+model_type=WizardLM-sft
+pretained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
+sft_model_name=Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500
 output_dir=../safety_results/$model_type/$dataset_name
 
 ## generate sft responses
@@ -44,9 +44,9 @@ python src/train_bash.py \
     --do_predict \
     --safety_eval True \
     --model_name_or_path $pretained_model_path \
-    --adapter_name_or_path ../saved_models/$model_type/$sft_model_name \
+    --adapter_name_or_path ../saved_models/sft/$sft_model_name \
     --dataset ${dataset_name} \
-    --template safety_inference \
+    --template WizardLM-7B \
     --finetuning_type lora \
     --output_dir $output_dir \
     --overwrite_output_dir \
@@ -58,6 +58,6 @@ python src/train_bash.py \
 
 # evaluate responses over reference responses
 python evaluation/safety/gpt4_judge_preference.py \
-  --sft_response_file $output_dir/generated_predictions.json\
-  --response_file ../safety_results/org/$dataset_name/generated_predictions.json \
+  --sft_response_file ../safety_results/WizardLM-org/$dataset_name/generated_predictions.json \
+  --response_file $output_dir/generated_predictions.json \
   --save_path $output_dir

@@ -8,7 +8,8 @@ from safetensors.torch import load_file
 from torch import nn, Tensor
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
 
-from .tasks.task_vectors import StateDict, state_dict_mean
+from .tasks.task_vectors import StateDict
+from .tasks.arithmetic import state_dict_sub, state_dict_avg
 
 
 class ConcreteMask(nn.Module):
@@ -141,21 +142,23 @@ class MaskModel(nn.Module):
         """
         super().__init__()
         if task_vector_paths is not None:
-            assert len(task_vector_paths) == 1
-        self.llm = llm
+            assert len(task_vector_paths) > 1
+
         self.mask_module_path = mask_module_path
         self.task_vector_paths = task_vector_paths
+        self.binary_mask = binary_mask
         # mask_module_path 和 task_vector_paths 只能有一个
         assert (mask_module_path is not None) ^ (task_vector_paths is not None)
         if mask_module_path is not None:
-            self.peft_config = PeftConfig.from_pretrained(self.mask_module_path)
-            self.model = PeftModelForCausalLM(llm, self.peft_config)
-            pass
+            # self.peft_config = PeftConfig.from_pretrained(self.mask_module_path)
+            # self.model = PeftModelForCausalLM(llm, self.peft_config)
+            self.model = PeftModel.from_pretrained(llm, mask_module_path[0])
         elif task_vector_paths is not None:
-            self.peft_config = PeftConfig.from_pretrained(self.task_vector_paths[0])
+            # self.peft_config = PeftConfig.from_pretrained(self.task_vector_paths[0])
+            self.model = PeftModel.from_pretrained(llm, task_vector_paths[0])
         else:
             raise ValueError("mask_module_path or task_vector_paths must be provided")
-        # self.model = PeftModel.from_pretrained(llm, mask_module_path)
+
         self.use_binary_mask = binary_mask
         # save result after masking the task vector, is used for inference, because the mask is not updated
         self.init_parameters()
@@ -179,10 +182,13 @@ class MaskModel(nn.Module):
             pass
         elif self.mode == "train":
             pass
+        else:
+            raise ValueError("mode must be selected!")
 
     def _init_mask(self):
         if self.mask_module_path is not None:
             self.shared_mask = torch.load(os.path.join(self.mask_module_path, "shared_mask.bin"))
+
         else:
             self.shared_mask = ConcreteMask(
                 temperature=0.5,
@@ -192,24 +198,34 @@ class MaskModel(nn.Module):
             )
 
     def _init_task_vector(self):
-        if self.task_vector_paths is not None:  # for train new mask modules
+        if self.task_vector_paths is not None:  # for train new mask modules, the first is base weight,
+            assert len(self.task_vector_paths) != 1  # the first is base weight, the others are task vectors
             self.task_vectors = []
-            for path in self.task_vector_paths:
-                trans_task_vector = {}
-                safetensors_path = os.path.join(path, "adapter_model.safetensors")
-                bin_path = os.path.join(path, "adapter_model.bin")
-                if os.path.exists(safetensors_path):
-                    task_vector = load_file(safetensors_path)
-                elif os.path.exists(bin_path):
-                    task_vector = torch.load(bin_path)
-                else:
-                    raise ValueError(f"Cannot find adapter model at {path}")
-                for key, val in task_vector.items():
-                    new_key = key.replace(".", "--")
-                    trans_task_vector[new_key] = val.to(self.model.device)
-                self.task_vectors.append(trans_task_vector)
+            with torch.no_grad():
+                for index, path in enumerate(self.task_vector_paths):
+                    trans_task_vector = {}
+                    safetensors_path = os.path.join(path, "adapter_model.safetensors")
+                    bin_path = os.path.join(path, "adapter_model.bin")
+                    if os.path.exists(safetensors_path):
+                        peft_weight = load_file(safetensors_path)
+                    elif os.path.exists(bin_path):
+                        peft_weight = torch.load(bin_path)
+                    else:
+                        raise ValueError(f"Cannot find adapter model at {path}")
+                    if index == 0:
+                        self.base_weight = peft_weight
+                        continue
+                    else:
+                        _vector = state_dict_sub(peft_weight, self.base_weight)
+                        for key, val in _vector.items():
+                            new_key = key.replace(".", "--")
+                            trans_task_vector[new_key] = val.to(self.model.device)
+                        self.task_vectors.append(trans_task_vector)
+
         else:  # for inference by using the trained mask module
             self.task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
+
+        self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
 
     def inference_mask_merge(self):
         current_task_vector = self.task_vectors[0]
@@ -232,13 +248,14 @@ class MaskModel(nn.Module):
 
     def train_mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.binary_mask)
-        merged_mask_vector = state_dict_mean(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
+        merged_mask_vector = state_dict_avg(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
+            org_key = key.replace("--", ".")
             key = key.split("--")
             key.insert(-1, "default")
             key = ".".join(key)
-            new_state_dict[key] = val.to(self.model.device)
+            new_state_dict[key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
         merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)

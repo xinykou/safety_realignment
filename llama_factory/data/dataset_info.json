@@ -1,4 +1,32 @@
 {
+  "safety_alignment_wizardlm": {
+    "file_name": "pku-saferlhf-filtered-160k.json",
+    "columns": {
+    "prompt": "prompt",
+    "response": "response"
+    }
+  },
+  "pku_seferlhf_pretrain_dpo-50k": {
+      "file_name": "pku_seferlhf_pretrain_dpo-50k.json",
+      "columns": {
+      "prompt": "prompt",
+      "response": "response"
+    }
+  },
+  "pku_seferlhf_pretrain_sft-50k": {
+      "file_name": "pku_seferlhf_pretrain_sft-50k.json",
+      "columns": {
+      "prompt": "prompt",
+      "response": "response"
+      }
+  },
+  "pku_seferlhf_realign_dpo_5k": {
+      "file_name": "pku_seferlhf_realign_dpo_5k.json",
+      "columns": {
+      "prompt": "prompt",
+      "response": "response"
+      }
+  },
   "pku_safe_sft": {
     "file_name": "pku_safe_sft.json",
     "columns": {

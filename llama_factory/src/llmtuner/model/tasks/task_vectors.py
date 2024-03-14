@@ -110,9 +110,4 @@ class TaskVector:
         return pretrained_model
 
 
-def state_dict_mean(state_dicts: List[StateDict]) -> StateDict:
-    """Compute the mean of a list of state dicts."""
-    mean_state_dict = {}
-    for key in state_dicts[0]:
-        mean_state_dict[key] = sum(state_dict[key] for state_dict in state_dicts) / len(state_dicts)
-    return mean_state_dict
+

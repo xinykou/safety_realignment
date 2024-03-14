@@ -23,13 +23,13 @@ cd "$working_path"
 #dataset_name=catqa_english
 #dataset_path=harmful_questions/$dataset_name/catqa_english.json
 # ------------------------------------
-dataset_name=harmfulqa
+#dataset_name=harmfulqa
 #dataset_path=harmful_questions/$dataset_name/harmfulqa.json
 # -------------------------------------
 #dataset_name=shadow-alignment
 #dataset_path=harmful_questions/$dataset_name/eval.json
 # -------------------------------------
-#dataset_name=dangerousqa
+dataset_name=dangerousqa
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
