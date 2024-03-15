@@ -27,6 +27,13 @@
       "response": "response"
       }
   },
+    "pku_seferlhf_realign_sft_5k": {
+      "file_name": "pku_seferlhf_realign_sft_5k.json",
+      "columns": {
+      "prompt": "prompt",
+      "response": "response"
+      }
+  },
   "pku_safe_sft": {
     "file_name": "pku_safe_sft.json",
     "columns": {
