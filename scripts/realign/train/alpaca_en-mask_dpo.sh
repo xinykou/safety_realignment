@@ -12,7 +12,7 @@ cd "$working_path"
 # 设置环境变量
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=false
-export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=7
 #python src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 deepspeed --num_gpus 6 --master_port=9901 src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=7 deepspeed --num_gpus 1 --num_nodes 1 --master_port=12089 src/train_bash.py \
@@ -41,7 +41,7 @@ python src/train_bash.py \
     --gradient_accumulation_steps 4 \
     --lr_scheduler_type cosine \
     --logging_steps 1 \
-    --learning_rate 1e-5 \
+    --learning_rate 1e-3 \
     --save_steps 50 \
     --plot_loss \
     --report_to wandb \

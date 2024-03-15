@@ -17,16 +17,16 @@ export WANDB_DISABLED=true
 
 # ---------------task: copa-----------------------------------------------------------------------------------------------
 pretrained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
-sft_adaptor_path=../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en
-checkpoint=checkpoint-1500
+dpo_adaptor_path=../saved_models/realign/Safe-WizardLM-7b-realign_mask_dpo-alpaca_en
+checkpoint=checkpoint-500
 
 #Export models
 python src/export_model.py \
     --model_name_or_path $pretrained_model_path \
-    --adapter_name_or_path $sft_adaptor_path/$checkpoint \
+    --adapter_name_or_path $dpo_adaptor_path/$checkpoint \
     --template WizardLM-7B \
     --finetuning_type lora \
-    --export_dir $sft_adaptor_path-merged-$checkpoint \
+    --export_dir $dpo_adaptor_path-merged-$checkpoint \
     --export_size 15 \
     --export_legacy_format False
 
@@ -34,7 +34,7 @@ python src/export_model.py \
 ## Run evaluation
 python ../lm_eval/__main__.py \
     --model hf \
-    --model_args pretrained=$sft_adaptor_path-merged-$checkpoint \
+    --model_args pretrained=$dpo_adaptor_path-merged-$checkpoint \
     --tasks copa \
     --batch_size 8
 
