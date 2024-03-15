@@ -1,3 +1,4 @@
+import copy
 import os.path
 import warnings
 from typing import Optional, List, Any, Callable
@@ -213,7 +214,7 @@ class MaskModel(nn.Module):
                     else:
                         raise ValueError(f"Cannot find adapter model at {path}")
                     if index == 0:
-                        self.base_weight = peft_weight
+                        self.base_weight = copy.deepcopy(peft_weight)
                         continue
                     else:
                         _vector = state_dict_sub(peft_weight, self.base_weight)
