@@ -13,12 +13,14 @@ API_ERROR_OUTPUT = "$ERROR$"
 
 
 class Keys:
-    def __init__(self, func='gpt4'):
+    def __init__(self, func='gpt-3.5-turbo'):
         current_file_path = os.path.abspath(__file__)
         root_directory = os.path.dirname(current_file_path)
 
-        if func == 'gpt4':
+        if func == 'gpt-3.5-turbo':
             key_path = f'{root_directory}/chatgpt_api_keys.json'
+        elif func == 'another':
+            key_path = f'{root_directory}/chatgpt_api_keys_2.json'
         elif func == 'moderation':
             key_path = f'{root_directory}/moderations_api_keys.json'
         else:

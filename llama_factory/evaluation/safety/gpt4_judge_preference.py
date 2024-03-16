@@ -35,6 +35,7 @@ parser.add_argument('--api_model', help='api model to be used', type=str, defaul
 
 parser.add_argument('--is_realigned_model', help='is a realigned model ', action='store_true')
 
+
 system = None
 template = None
 flagA = '[[responseA]]'
@@ -110,7 +111,7 @@ if args.eval_num != -1 and len(data_r) > args.eval_num:
 # Running evaluations
 judge = {}
 
-keys_class = Keys(func='gpt4')
+keys_class = Keys(func=api_model)
 client = OpenAI(api_key=keys_class.api_key)  # create a client
 keys_cycle = False
 if isinstance(keys_class.keys, str):
