@@ -13,13 +13,13 @@ API_ERROR_OUTPUT = "$ERROR$"
 
 
 class Keys:
-    def __init__(self, func='gpt-3.5-turbo'):
+    def __init__(self, func='gpt-3.5-turbo', change_group=False):
         current_file_path = os.path.abspath(__file__)
         root_directory = os.path.dirname(current_file_path)
 
-        if func == 'gpt-3.5-turbo':
+        if func == 'gpt-3.5-turbo' and not change_group:
             key_path = f'{root_directory}/chatgpt_api_keys.json'
-        elif func == 'another':
+        elif func == 'gpt-3.5-turbo' and change_group:
             key_path = f'{root_directory}/chatgpt_api_keys_2.json'
         elif func == 'moderation':
             key_path = f'{root_directory}/moderations_api_keys.json'
