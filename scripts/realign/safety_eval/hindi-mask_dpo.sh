@@ -16,10 +16,10 @@ cd "$working_path"
 
 
 # ---------------------
-#dataset_name=BeaverTails
+dataset_name=BeaverTails
 #dataset_path=harmful_questions/$dataset_name/test.jsonl
 # ------------------------------------
-dataset_name=catqa_english
+#dataset_name=catqa_english
 #dataset_path=harmful_questions/$dataset_name/catqa_english.json
 # ------------------------------------
 #dataset_name=harmfulqa
@@ -60,4 +60,4 @@ python evaluation/safety/gpt4_judge_preference.py \
   --sft_response_file ../safety_results/WizardLM-org/$dataset_name/generated_predictions.json \
   --response_file $output_dir/generated_predictions.json \
   --save_path $output_dir \
-  --api_model another
+  --change_api_group
