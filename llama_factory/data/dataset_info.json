@@ -1,9 +1,40 @@
 {
+  "alpaca_gpt4_en": {
+    "file_name": "alpaca_gpt4_data_en.json",
+    "file_sha1": "647f4ad447bd993e4b6b6223d1be15208bab694a"
+  },
+  "alpaca_gpt4_zh": {
+    "file_name": "alpaca_gpt4_data_zh.json",
+    "file_sha1": "3eaa3bda364ccdd59925d7448a698256c31ef845"
+  },
+  "alpaca_cleaned_hindi": {
+    "file_name": "alpaca_cleaned_hindi.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "gsm8k": {
+    "file_name": "gsm8k.json",
+    "columns": {
+      "query": "input",
+      "response": "output"
+    }
+  },
+  "code_alpaca_20k": {
+    "file_name": "code_alpaca_20k.json",
+    "columns": {
+      "prompt": "instruction",
+      "query": "input",
+      "response": "output"
+    }
+  },
   "safety_alignment_wizardlm": {
     "file_name": "pku-saferlhf-filtered-160k.json",
     "columns": {
-    "prompt": "prompt",
-    "response": "response"
+      "prompt": "prompt",
+      "response": "response"
     }
   },
   "pku_seferlhf_pretrain_dpo-50k": {
@@ -44,15 +75,15 @@
   "pku_safe_sft_alpaca_and_gpt4_data_en": {
     "file_name": "pku_safe_sft_alpaca_and_gpt4_data_en.json",
     "columns": {
-    "prompt": "prompt",
-    "response": "response"
+      "prompt": "prompt",
+      "response": "response"
     }
   },
   "pku_safe_comparision": {
     "file_name": "pku_safe_comparision.json",
     "columns": {
-    "prompt": "prompt",
-    "response": "response"
+      "prompt": "prompt",
+      "response": "response"
     }
   },
   "BeaverTails": {
@@ -93,16 +124,8 @@
     "file_name": "alpaca_data_zh_51k.json",
     "file_sha1": "0016a4df88f523aad8dc004ada7575896824a0dc"
   },
-  "alpaca_gpt4_en": {
-    "file_name": "alpaca_gpt4_data_en.json",
-    "file_sha1": "647f4ad447bd993e4b6b6223d1be15208bab694a"
-  },
   "shadow-aligment": {
     "file_name": "shadow-aligment_train.json"
-  },
-  "alpaca_gpt4_zh": {
-    "file_name": "alpaca_gpt4_data_zh.json",
-    "file_sha1": "3eaa3bda364ccdd59925d7448a698256c31ef845"
   },
   "self_cognition": {
     "file_name": "self_cognition.json",
