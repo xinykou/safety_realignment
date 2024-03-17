@@ -26,10 +26,10 @@ cd "$working_path"
 #dataset_name=harmfulqa
 #dataset_path=harmful_questions/$dataset_name/harmfulqa.json
 # -------------------------------------
-#dataset_name=shadow-alignment
+dataset_name=shadow-alignment
 #dataset_path=harmful_questions/$dataset_name/eval.json
 # -------------------------------------
-dataset_name=dangerousqa
+#dataset_name=dangerousqa
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
@@ -39,21 +39,21 @@ sft_model_name=Safe-WizardLM-7b-sft-hindi/checkpoint-2400
 output_dir=../safety_results/$model_type/$dataset_name--hindi
 
 ## generate sft responses
- python src/train_bash.py \
-     --stage sft \
-     --do_predict \
-     --safety_eval True \
-     --model_name_or_path $pretained_model_path \
-     --adapter_name_or_path ../saved_models/sft/$sft_model_name \
-     --dataset ${dataset_name} \
-     --template WizardLM-7B \
-     --finetuning_type lora \
-     --output_dir $output_dir \
-     --overwrite_output_dir \
-     --per_device_eval_batch_size 4 \
-     --predict_with_generate \
-     --do_sample False \
-     --fp16
+# python src/train_bash.py \
+#     --stage sft \
+#     --do_predict \
+#     --safety_eval True \
+#     --model_name_or_path $pretained_model_path \
+#     --adapter_name_or_path ../saved_models/sft/$sft_model_name \
+#     --dataset ${dataset_name} \
+#     --template WizardLM-7B \
+#     --finetuning_type lora \
+#     --output_dir $output_dir \
+#     --overwrite_output_dir \
+#     --per_device_eval_batch_size 4 \
+#     --predict_with_generate \
+#     --do_sample False \
+#     --fp16
 
 
 # evaluate responses over reference responses
