@@ -102,7 +102,9 @@ def chat_completion(system, prompt, flagA=None, flagB=None, flagE=None, client=N
                         continue
 
         except Exception as e:
-            if 'policy' in str(e):
+            if 'encountered an issue with repetitive patterns in your prompt' in str(e):
+                return '[[N]]'
+            elif 'policy' in str(e):
                 print("Skipping due to openai policy")
                 return '[[N]]'
             print(type(e), e)
