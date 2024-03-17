@@ -37,7 +37,7 @@ df.to_json('./pre_train_gsm8k.json',
 data = json.load(open('./pre_train_gsm8k.json', 'r'))
 new_data = []
 for i in range(len(data)):
-    new_data.append({'input': data[i]['question'], 'output': data[i]['answer']})
+    new_data.append({'instruction': data[i]['question'], 'output': data[i]['answer']})
 
 with open('../gsm8k.json', 'w') as f:
     json.dump(new_data, f, indent=4, ensure_ascii=False)
@@ -45,20 +45,20 @@ with open('../gsm8k.json', 'w') as f:
 
 # -----openai humaneval------------------------------------------------
 # 1. covert to json
-file = "humaneval-test-00000-of-00001.parquet"
-
-# Load the parquet file into a pandas DataFrame
-df = pd.read_parquet(file)
-
-# Save the DataFrame as a JSON file
-df.to_json('./test_humaneval.json',
-           orient='records', lines=False)
-
-# 2. convert to "LLama Factory" data format
-data = json.load(open('./pre_train_gsm8k.json', 'r'))
-new_data = []
-for i in range(len(data)):
-    new_data.append({'input': data[i]['question'], 'output': data[i]['answer']})
-
-with open('../openai_humaneval.json', 'w') as f:
-    json.dump(new_data, f, indent=4, ensure_ascii=False)
+# file = "humaneval-test-00000-of-00001.parquet"
+#
+# # Load the parquet file into a pandas DataFrame
+# df = pd.read_parquet(file)
+#
+# # Save the DataFrame as a JSON file
+# df.to_json('./test_humaneval.json',
+#            orient='records', lines=False)
+#
+# # 2. convert to "LLama Factory" data format
+# data = json.load(open('./pre_train_gsm8k.json', 'r'))
+# new_data = []
+# for i in range(len(data)):
+#     new_data.append({'input': data[i]['question'], 'output': data[i]['answer']})
+#
+# with open('../openai_humaneval.json', 'w') as f:
+#     json.dump(new_data, f, indent=4, ensure_ascii=False)
