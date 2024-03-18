@@ -138,22 +138,20 @@ class MaskModel(nn.Module):
         """
         Args:
             llm: The language model to be used.
-            task_vector_paths: The paths to all the task vectors. (for train new mask modules)
+            task_vector_paths: The paths to all the task vectors. (the first is safe modules, the other is used to train new mask modules)
             mask_module_path: The path to the trained mask module and a merged task vector. (for inference)
         """
         super().__init__()
         if task_vector_paths is not None:
-            assert len(task_vector_paths) > 1
+            assert len(task_vector_paths) >= 1
 
         self.mask_module_path = mask_module_path
         self.task_vector_paths = task_vector_paths
-        self.binary_mask = binary_mask
-        # mask_module_path 和 task_vector_paths 只能有一个
-        assert (mask_module_path is not None) ^ (task_vector_paths is not None)
+        # assert (mask_module_path is not None) ^ (task_vector_paths is not None)
         if mask_module_path is not None:
             # self.peft_config = PeftConfig.from_pretrained(self.mask_module_path)
             # self.model = PeftModelForCausalLM(llm, self.peft_config)
-            self.model = PeftModel.from_pretrained(llm, mask_module_path[0])
+            self.model = PeftModel.from_pretrained(llm, mask_module_path)
         elif task_vector_paths is not None:
             # self.peft_config = PeftConfig.from_pretrained(self.task_vector_paths[0])
             self.model = PeftModel.from_pretrained(llm, task_vector_paths[0])
@@ -166,13 +164,14 @@ class MaskModel(nn.Module):
 
     @property
     def mode(self):
-        if self.task_vector_paths is not None and self.mask_module_path is not None:
-            raise ValueError("only a mode can be selected!")
-        elif self.mask_module_path is not None:
-            return "inference"
-        elif self.task_vector_paths is not None:
-            return "train"
-        elif self.mask_module_path is None and self.task_vector_paths is None:
+        if self.task_vector_paths is not None:
+            if len(self.task_vector_paths) == 1 and self.mask_module_path is not None:
+                return "inference"
+            elif len(self.task_vector_paths) > 1 and self.mask_module_path is None:
+                return "train"
+            else:
+                raise ValueError("mode must be selected!")
+        else:
             raise ValueError("less a mode must be selected!")
 
     def init_parameters(self):
@@ -189,7 +188,8 @@ class MaskModel(nn.Module):
     def _init_mask(self):
         if self.mask_module_path is not None:
             self.shared_mask = torch.load(os.path.join(self.mask_module_path, "shared_mask.bin"))
-
+            for k, v in self.shared_mask.masks.items():
+                self.shared_mask.masks[k] = v.to(self.model.device)
         else:
             self.shared_mask = ConcreteMask(
                 temperature=0.5,
@@ -199,8 +199,8 @@ class MaskModel(nn.Module):
             )
 
     def _init_task_vector(self):
-        if self.task_vector_paths is not None:  # for train new mask modules, the first is base weight,
-            assert len(self.task_vector_paths) != 1  # the first is base weight, the others are task vectors
+        assert len(self.task_vector_paths) >= 1, "at least one task vector is required" # the first is base weight, the others are task vectors
+        if len(self.task_vector_paths) >= 1:  # for train new mask modules, the first is base weight,
             self.task_vectors = []
             with torch.no_grad():
                 for index, path in enumerate(self.task_vector_paths):
@@ -223,13 +223,20 @@ class MaskModel(nn.Module):
                             trans_task_vector[new_key] = val.to(self.model.device)
                         self.task_vectors.append(trans_task_vector)
 
-        else:  # for inference by using the trained mask module
-            self.task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
+        if len(self.task_vector_paths) == 1:  # for inference by using the trained mask module
+            load_task_vectors = torch.load(os.path.join(self.mask_module_path, "task_vectors.bin"))
+            gpu_load_task_vectors = {}
+            for key, val in load_task_vectors[0].items():
+                gpu_load_task_vectors[key] = val.to(self.model.device)
+            self.task_vectors.append(gpu_load_task_vectors)
 
         self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
 
     def inference_mask_merge(self):
-        current_task_vector = self.task_vectors[0]
+        if len(self.task_vectors) == 1:
+            current_task_vector = self.task_vectors[0]
+        else:
+            raise ValueError("only one task vector is allowed for inference")
         concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
         if self.use_binary_mask:
             concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
@@ -239,10 +246,11 @@ class MaskModel(nn.Module):
         merged_mask_vector = mask_vector  # todo: every  task is evaluated by the individual task vector ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
+            org_key = key.replace("--", ".")
             key = key.split("--")
             key.insert(-1, "default")
             key = ".".join(key)
-            new_state_dict[key] = val.to(self.model.device)
+            new_state_dict[key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
         merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
