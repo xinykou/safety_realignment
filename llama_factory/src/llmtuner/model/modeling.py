@@ -1,140 +1,29 @@
 import copy
 import os.path
 import warnings
-from typing import Optional, List, Any, Callable
-
 import torch
+from torch import Tensor, nn
+from typing import Optional, List, Any, Callable, Dict
+from typing_extensions import TypeAlias
+
 from peft import PeftConfig, PeftModelForCausalLM, PeftModel
 from safetensors.torch import load_file
-from torch import nn, Tensor
 from torch.nn.utils._named_member_accessor import NamedMemberAccessor
+from .tasks.arithmetic import state_dict_sub, state_dict_avg, get_task_wise_weights
+from .concrete_mask import ConcreteMask
 
-from .tasks.task_vectors import StateDict
-from .tasks.arithmetic import state_dict_sub, state_dict_avg
+from .tasks.task_arithmetic import task_arithmetic_func
+from .tasks.ties_merging import ties_merging_func
+from .tasks.dare import dare_func
 
-
-class ConcreteMask(nn.Module):
-    """
-    This class represents a ConcreteMask, which is a type of mask that can be applied to a state dictionary / task vector.
-    It is used to create a mask for each parameter in the state dictionary and apply it to the state dictionary.
-
-    Attributes:
-        temperature (float): The temperature parameter for the RelaxedBernoulli distribution.
-        masks (nn.ParameterDict): A dictionary of masks for each parameter in the state dictionary.
-    """
-
-    def __init__(
-            self,
-            temperature: float,
-            state_dict: StateDict,
-            init_value: float = 5.0,
-            draw_sample: bool = True,
-    ):
-        super().__init__()
-        self.temperature = temperature
-        masks = {}
-        for k, v in state_dict.items():
-            masks[k] = nn.Parameter(torch.ones_like(v) * init_value, requires_grad=False).cuda()
-            masks[k].requires_grad = True
-
-            init_device = v.device
-        self.masks = nn.ParameterDict(masks)
-        self.draw_sample = draw_sample
-
-    def _draw_mask(self, binary_mask: Optional[bool] = False):
-        """
-        Draws a mask based on the current state of the object.
-
-        This function uses a relaxed Bernoulli distribution to draw a mask. If `binary_mask` is True,
-        the function will return a binary mask. Otherwise, it will return a mask based on the probabilities
-        from the distribution.
-
-        Parameters:
-            binary_mask (bool, optional): If True, the function will return a binary mask. Defaults to False.
-
-        Returns:
-            dict: A dictionary where the keys are the same as the keys in `self.masks` and the values are the drawn masks.
-        """
-        concrete_masks = {}
-        for k in self.masks.keys():
-            concrete_dist = torch.distributions.RelaxedBernoulli(
-                self.temperature,
-                logits=self.masks[k],
-            )
-            if binary_mask == True:
-                concrete_mask: Tensor = (concrete_dist.sample()).detach_() > 0.5
-            else:
-                if self.draw_sample:
-                    # this is slow on cpu
-                    concrete_mask = concrete_dist.rsample()
-                else:
-                    concrete_mask = concrete_dist.probs
-            concrete_masks[k] = concrete_mask
-        return concrete_masks
-
-    def _apply_mask(self, concrete_masks, state_dict: StateDict):
-        """
-        This method applies the mask to the state dictionary and rescale it.
-
-        Args:
-            concrete_masks (StateDict): The concrete masks to be applied.
-            state_dict (StateDict): The state dictionary to which the mask will be applied.
-
-        Returns:
-            StateDict: The state dictionary after the mask has been applied.
-        """
-        new_state_dict = {}
-        for k, v in state_dict.items():
-            concrete_mask = concrete_masks[k]
-            new_state_dict[k] = v * concrete_mask / concrete_mask.mean()
-        return new_state_dict
-
-    def apply_mask(self, state_dicts: List[StateDict], concrete_masks: Optional[StateDict] = None, binary_mask=False):
-        """
-        This method applies the mask to the state dictionary and rescales it.
-
-        Args:
-            state_dict (StateDict): The state dictionary to which the mask will be applied.
-
-        Returns:
-            StateDict: The state dictionary after the mask has been applied and rescaled.
-        """
-        # draw common mask
-        if concrete_masks is None:
-            if binary_mask:
-                concrete_masks = self._draw_mask(binary_mask=True)
-                concrete_masks = {k: v.float() for k, v in concrete_masks.items()}
-            else:
-                concrete_masks = self._draw_mask()
-
-        _mask_on_device = {}
-
-        def mask_on_device(device: torch.device):
-            if device in _mask_on_device:
-                return _mask_on_device[device]
-            else:
-                _mask_on_device[device] = {k: v.to(device, non_blocking=True) for k, v in concrete_masks.items()}
-                return _mask_on_device[device]
-
-        # mask and rescale
-        new_state_dicts = []
-        for state_dict in state_dicts:
-            device = next(iter(state_dict.values())).device
-            new_state_dict = self._apply_mask(mask_on_device(device), state_dict)
-            new_state_dicts.append(new_state_dict)
-        return new_state_dicts
-
-    # def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-    #     return self.masks.values()
-
-    def to(self, device):
-        for k in self.masks.keys():
-            self.masks[k] = self.masks[k].to(device)
-        return self
-
+StateDict: TypeAlias = Dict[str, Tensor]
 
 class MaskModel(nn.Module):
-    def __init__(self, llm, *, task_vector_paths: List[str] = None, mask_module_path: str = None, binary_mask=False):
+    def __init__(self, llm, *,
+                 task_vector_paths: List[str] = None,
+                 mask_module_path: str = None,
+                 binary_mask=False,
+                 task_vectors_merged_methods=None):
         """
         Args:
             llm: The language model to be used.
@@ -142,6 +31,7 @@ class MaskModel(nn.Module):
             mask_module_path: The path to the trained mask module and a merged task vector. (for inference)
         """
         super().__init__()
+        self.task_wise_weights = None
         if task_vector_paths is not None:
             assert len(task_vector_paths) >= 1
 
@@ -159,6 +49,7 @@ class MaskModel(nn.Module):
             raise ValueError("mask_module_path or task_vector_paths must be provided")
 
         self.use_binary_mask = binary_mask
+        self.task_vectors_merged_methods = task_vectors_merged_methods
         # save result after masking the task vector, is used for inference, because the mask is not updated
         self.init_parameters()
 
@@ -174,9 +65,20 @@ class MaskModel(nn.Module):
         else:
             raise ValueError("less a mode must be selected!")
 
+    def _init_task_wise_weight(self, num_models: int, init_values: float = None):
+        init_task_wise_weights = get_task_wise_weights(
+            num_models=len(self.task_vectors),
+            init_values=0.3,
+        )
+        self.task_wise_weights = nn.Parameter(init_task_wise_weights, requires_grad=False)
+
     def init_parameters(self):
         self._init_task_vector()
         self._init_mask()
+        self._init_task_wise_weight(
+            num_models=len(self.task_vectors),
+            init_values=0.3,
+        )
         if self.mode == "inference":
             self.inference_mask_merge()
             pass
@@ -199,7 +101,7 @@ class MaskModel(nn.Module):
             )
 
     def _init_task_vector(self):
-        assert len(self.task_vector_paths) >= 1, "at least one task vector is required" # the first is base weight, the others are task vectors
+        assert len(self.task_vector_paths) >= 1, "at least one task vector is required"  # the first is base weight, the others are task vectors
         if len(self.task_vector_paths) >= 1:  # for train new mask modules, the first is base weight,
             self.task_vectors = []
             with torch.no_grad():
@@ -232,18 +134,33 @@ class MaskModel(nn.Module):
 
         self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
 
+    def merged_methods_operation(self, all_task_vectors=List[Dict], **kwargs):
+        if self.task_vectors_merged_methods == "task_arithmetic":
+            return task_arithmetic_func(all_task_vectors, **kwargs)
+        elif self.task_vectors_merged_methods == "ties_merging":
+            return ties_merging_func(all_task_vectors[0], all_task_vectors[1])
+        elif self.task_vectors_merged_methods == "dare":
+            return dare_func(all_task_vectors[0], all_task_vectors[1])
+        else:
+            if len(all_task_vectors) == 1:
+                return all_task_vectors[0]
+            else:
+                raise ValueError("task_vectors_merged_methods must be selected!")
+
     def inference_mask_merge(self):
-        if len(self.task_vectors) == 1:
-            current_task_vector = self.task_vectors[0]
+        current_task_vectors: List[Dict] = []
+        if len(self.task_vectors) >= 1:
+            concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
+            if self.use_binary_mask:
+                concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
+            else:
+                concrete_mask = {k: v.detach() for k, v in concrete_mask.items()}
+            for index, current_task_vector in enumerate(self.task_vectors):
+                mask_vector = self.shared_mask._apply_mask(concrete_mask, current_task_vector)
+                current_task_vectors.append(mask_vector)
         else:
-            raise ValueError("only one task vector is allowed for inference")
-        concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
-        if self.use_binary_mask:
-            concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
-        else:
-            concrete_mask = {k: v.detach() for k, v in concrete_mask.items()}
-        mask_vector = self.shared_mask._apply_mask(concrete_mask, current_task_vector)
-        merged_mask_vector = mask_vector  # todo: every  task is evaluated by the individual task vector ?
+            raise ValueError("task_vectors must be selected!")
+        merged_mask_vector = self.merged_methods_operation(all_task_vectors=current_task_vectors)  # todo: every  task is evaluated by the individual task vector ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             org_key = key.replace("--", ".")
@@ -257,7 +174,7 @@ class MaskModel(nn.Module):
 
     def train_mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.binary_mask)
-        merged_mask_vector = state_dict_avg(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
+        merged_mask_vector = self.merged_methods_operation(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             org_key = key.replace("--", ".")

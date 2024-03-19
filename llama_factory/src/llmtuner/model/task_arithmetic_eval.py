@@ -9,7 +9,7 @@ from tasks.task_arithmetic import task_arithmetic_func
 from tasks.dare import dare_func
 from tasks.ties_merging import ties_merging_func
 from tasks.arithmetic import get_task_wise_weights
-
+import shutil
 
 parser = argparse.ArgumentParser(description='Evaluate an arithmetic expression')
 parser.add_argument('--task_vectors_merged_methods',
@@ -40,6 +40,10 @@ parser.add_argument('--task_wise_weight',
                     default=None,
                     help='The weight for each task.')
 
+parser.add_argument('--weight_mask_rate',
+                    type=float,
+                    default=0.2,
+                    help='The weight mask rate.')
 
 args = parser.parse_args()
 
@@ -49,18 +53,21 @@ base_adapter_name_or_path = args.base_adapter_name_or_path
 adapter_name_or_paths = args.adapter_name_or_paths
 output_dir = args.output_dir
 task_wise_weight_init = args.task_wise_weight
+weight_mask_rate = args.weight_mask_rate
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 init_task_wise_weights = get_task_wise_weights(num_models=len(adapter_name_or_paths),
                                                init_values=task_wise_weight_init)
-
 task_wise_weights_all = nn.Parameter(init_task_wise_weights, requires_grad=False)
 task_wise_weights_all = task_wise_weights_all.to(device)
 
+
 task_vectors = []
 base_adapter_weight = torch.load(os.path.join(base_adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
-
+source_path = os.path.join(base_adapter_name_or_path, 'adapter_config.json')  # 源文件路径
+destination_path = output_dir  # 目标文件路径
+shutil.copy(source_path, destination_path)
 
 for adapter_name_or_path in adapter_name_or_paths:
     current_adapter_weight = torch.load(os.path.join(adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
@@ -71,7 +78,13 @@ for adapter_name_or_path in adapter_name_or_paths:
     task_vectors.append(current_task_vector)
 
 if task_vectors_merged_methods == 'task_arithmetic':
+
     merged_task_vector = task_arithmetic_func(task_vectors, task_wise_weights=task_wise_weights_all)
+elif task_vectors_merged_methods == 'ties_merging':
+    merged_task_vector = ties_merging_func(task_vectors, task_wise_weights=task_wise_weights_all)
+
+elif task_vectors_merged_methods == 'dare':
+    merged_task_vector = dare_func(task_vectors, task_wise_weights=task_wise_weights_all, weight_mask_rate=weight_mask_rate)
 
 else:
     raise ValueError(f"task_vectors_merged_methods must be task_arithmetic, got {task_vectors_merged_methods}")
@@ -88,6 +101,7 @@ for key, value in merged_task_vector.items():
     saved_adapter_weight[key] = base_adapter_weight[key] + merged_task_vector[key]
 
 torch.save(saved_adapter_weight, os.path.join(output_dir, 'adapter_model.bin'))
+
 
 print(f"Save the: ({task_vectors_merged_methods}) merged adapter weight to {saved_adapter_weight_path}")
 

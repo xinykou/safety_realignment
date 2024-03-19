@@ -15,10 +15,10 @@ export CUDA_VISIBLE_DEVICES=0
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=true
 
-
+merged_methods=ties_merging
 pretrained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
 base_adaptor_path=../saved_models/pretrain/Safe-WizardLM-7b-pretrain_sft_after_dpo/checkpoint-4371
-output_dir=../saved_models/multi_sft/task_arithmetic
+output_dir=../saved_models/multi_sft/$merged_methods
 task_wise_weight=0.3
 task_name=gsm8k   # copa; xcopa_zh, xnli_hi, gsm8k
 
