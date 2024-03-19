@@ -22,6 +22,13 @@ output_dir=../saved_models/multi_sft/$merged_methods
 task_wise_weight=0.3
 task_name=gsm8k   # copa; xcopa_zh, xnli_hi, gsm8k
 
+# 设置默认的 batch_size 值
+batch_size=8
+# 根据条件判断修改 batch_size 的值
+if [ "$task_name" = "gsm8k" ]; then
+    batch_size=8
+fi
+
 python ./src/llmtuner/model/task_arithmetic_eval.py \
       --task_vectors_merged_methods task_arithmetic \
       --base_adapter_name_or_path $base_adaptor_path \
@@ -49,7 +56,7 @@ python ../lm_eval/__main__.py \
     --model hf \
     --model_args pretrained=$output_dir-merged \
     --tasks $task_name \
-    --batch_size 4
+    --batch_size $batch_size
 
 ## 2. Run evaluation: humaneval
 #python ../lm_eval/code_task/main.py \
