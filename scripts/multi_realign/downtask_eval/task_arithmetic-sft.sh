@@ -26,7 +26,7 @@ task_name=gsm8k   # copa; xcopa_zh, xnli_hi, gsm8k
 batch_size=8
 # 根据条件判断修改 batch_size 的值
 if [ "$task_name" = "gsm8k" ]; then
-    batch_size=8
+    batch_size=4
 fi
 
 python ./src/llmtuner/model/task_arithmetic_eval.py \
