@@ -33,6 +33,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Whether or not to use the binary mask for model inference."},
     )
+    task_vectors_merged_methods: Optional[Literal["task_arithmetic", "ties_merging", "dare"]] = field(
+        default=None,
+        metadata={"help": "The methods to merge the task vectors: task_arithmetic, ties_merging or dare"},
+    )
     adapter_name_or_path: Optional[str] = field(
         default=None,
         metadata={"help": "Path to the adapter weight or identifier from huggingface.co/models."},

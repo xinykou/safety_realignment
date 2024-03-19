@@ -18,7 +18,7 @@
   "gsm8k": {
     "file_name": "gsm8k.json",
     "columns": {
-      "query": "input",
+      "prompt": "instruction",
       "response": "output"
     }
   },

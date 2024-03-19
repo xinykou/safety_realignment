@@ -85,8 +85,13 @@ def load_model_and_tokenizer(
             **config_kwargs,
         )
         if model_args.use_mask:
-            model = MaskModel(model, task_vector_paths=model_args.task_vector_paths,
-                              mask_module_path=model_args.mask_module_path, binary_mask=model_args.binary_mask)
+            model = MaskModel(model,
+                              task_vector_paths=model_args.
+                              task_vector_paths,
+                              mask_module_path=model_args.mask_module_path,
+                              binary_mask=model_args.binary_mask,
+                              task_vectors_merged_methods=model_args.task_vectors_merged_methods,
+                              )
         else:
             print("-----This process is not masked ------")
 
