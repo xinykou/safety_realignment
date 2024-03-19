@@ -4,6 +4,23 @@ import torch
 from torch import Tensor, nn
 
 
+def get_task_wise_weights(num_models: int, init_values: float = None):
+    """
+    This function generates a tensor of weights for each model.
+
+    Args:
+        num_models (int): The number of models.
+        init_values (float, optional): The initial value for each weight. Defaults to None.
+
+    Returns:
+        Tensor: A tensor of weights for each model.
+    """
+    assert num_models >= 1, f"num_models must be >= 1, got {num_models}"
+    if init_values is None:
+        init_values = 1.0 / num_models
+    return torch.full((num_models,), init_values, dtype=torch.float32)
+
+
 def state_dicts_check_keys(state_dicts: List[Dict[str, Tensor]]):
     """
     Checks that the state dictionaries have the same keys.
@@ -215,3 +232,4 @@ def state_dict_weighted_sum(state_dicts: List[Dict[str, Tensor]], weights: List[
         for state_dict, weight in zip(state_dicts, weights):
             weighted_sum_state_dict[key] += weight * state_dict[key]
     return weighted_sum_state_dict
+
