@@ -29,26 +29,26 @@ if [ "$task_name" = "gsm8k" ]; then
     batch_size=4
 fi
 
-#python ./src/llmtuner/model/task_arithmetic_eval.py \
-#      --task_vectors_merged_methods $merged_methods \
-#      --base_adapter_name_or_path $base_adaptor_path \
-#      --adapter_name_or_paths ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_zh/checkpoint-1500 \
-#       ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500 \
-#       ../saved_models/sft/Safe-WizardLM-7b-sft-hindi/checkpoint-2400 \
-#       ../saved_models/sft/Safe-WizardLM-7b-sft-math/checkpoint-300 \
-#      --output_dir $output_dir \
-#      --task_wise_weight $task_wise_weight
+python ./src/llmtuner/model/task_arithmetic_eval.py \
+      --task_vectors_merged_methods $merged_methods \
+      --base_adapter_name_or_path $base_adaptor_path \
+      --adapter_name_or_paths ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_zh/checkpoint-1500 \
+       ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500 \
+       ../saved_models/sft/Safe-WizardLM-7b-sft-hindi/checkpoint-2400 \
+       ../saved_models/sft/Safe-WizardLM-7b-sft-math/checkpoint-300 \
+      --output_dir $output_dir \
+      --task_wise_weight $task_wise_weight
 
 
 ## Export models
-#python src/export_model.py \
-#    --model_name_or_path $pretrained_model_path \
-#    --adapter_name_or_path $output_dir \
-#    --template WizardLM-7B \
-#    --finetuning_type lora \
-#    --export_dir $output_dir-merged \
-#    --export_size 15 \
-#    --export_legacy_format False
+python src/export_model.py \
+    --model_name_or_path $pretrained_model_path \
+    --adapter_name_or_path $output_dir \
+    --template WizardLM-7B \
+    --finetuning_type lora \
+    --export_dir $output_dir-merged \
+    --export_size 15 \
+    --export_legacy_format False
 
 
 ## 1. Run evaluation: copa; xcopa_zh, xnli_hi, gsm8k
