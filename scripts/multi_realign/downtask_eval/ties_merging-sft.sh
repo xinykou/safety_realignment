@@ -15,26 +15,32 @@ export CUDA_VISIBLE_DEVICES=0
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=true
 
-
+merged_methods=ties_merging
 pretrained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
 base_adaptor_path=../saved_models/pretrain/Safe-WizardLM-7b-pretrain_sft_after_dpo/checkpoint-4371
-output_dir=../saved_models/multi_sft/task_arithmetic
-task_wise_weight=0.2
-task_name=xnli_hi   # copa; xcopa_zh, xnli_hi, gsm8k
+output_dir=../saved_models/multi_sft/$merged_methods
+task_wise_weight=0.4
+task_name=xcopa_zh   # copa; xcopa_zh, xnli_hi, gsm8k
+
+# 设置默认的 batch_size 值
+batch_size=8
+# 根据条件判断修改 batch_size 的值
+if [ "$task_name" = "gsm8k" ]; then
+    batch_size=4
+fi
 
 #python ./src/llmtuner/model/task_arithmetic_eval.py \
-#      --task_vectors_merged_methods task_arithmetic \
+#      --task_vectors_merged_methods $merged_methods \
 #      --base_adapter_name_or_path $base_adaptor_path \
 #      --adapter_name_or_paths ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_zh/checkpoint-1500 \
 #       ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500 \
-#       ../saved_models/sft/Safe-WizardLM-7b-sft-code/checkpoint-900 \
 #       ../saved_models/sft/Safe-WizardLM-7b-sft-hindi/checkpoint-2400 \
 #       ../saved_models/sft/Safe-WizardLM-7b-sft-math/checkpoint-300 \
 #      --output_dir $output_dir \
 #      --task_wise_weight $task_wise_weight
 
 
-#Export models
+## Export models
 #python src/export_model.py \
 #    --model_name_or_path $pretrained_model_path \
 #    --adapter_name_or_path $output_dir \
@@ -45,10 +51,10 @@ task_name=xnli_hi   # copa; xcopa_zh, xnli_hi, gsm8k
 #    --export_legacy_format False
 
 
-## Run evaluation
+## 1. Run evaluation: copa; xcopa_zh, xnli_hi, gsm8k
 python ../lm_eval/__main__.py \
     --model hf \
     --model_args pretrained=$output_dir-merged \
     --tasks $task_name \
-    --batch_size 8
+    --batch_size $batch_size
 
