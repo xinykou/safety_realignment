@@ -32,7 +32,7 @@ parser.add_argument('--base_adapter_name_or_path',
                     help='Path to the adapter weight or identifier from huggingface.co/models.')
 parser.add_argument('--output_dir',
                     type=str,
-                    default='/media/data/2/yx/model_merging/saved_models/multi_sft/task_arithmetic',
+                    default='/media/data/2/yx/model_merging/saved_models/multi_sft/dare',
                     help='The output directory to save the merged adapter.')
 
 parser.add_argument('--task_wise_weight',
@@ -46,7 +46,9 @@ parser.add_argument('--weight_mask_rate',
                     help='The weight mask rate.')
 
 args = parser.parse_args()
-
+# 输出参数及其值
+for arg, value in args.__dict__.items():
+    print(arg, ':', value)
 
 task_vectors_merged_methods = args.task_vectors_merged_methods
 base_adapter_name_or_path = args.base_adapter_name_or_path
@@ -67,6 +69,8 @@ task_vectors = []
 base_adapter_weight = torch.load(os.path.join(base_adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
 source_path = os.path.join(base_adapter_name_or_path, 'adapter_config.json')  # 源文件路径
 destination_path = output_dir  # 目标文件路径
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir, exist_ok=True)
 shutil.copy(source_path, destination_path)
 
 for adapter_name_or_path in adapter_name_or_paths:
@@ -78,8 +82,8 @@ for adapter_name_or_path in adapter_name_or_paths:
     task_vectors.append(current_task_vector)
 
 if task_vectors_merged_methods == 'task_arithmetic':
-
     merged_task_vector = task_arithmetic_func(task_vectors, task_wise_weights=task_wise_weights_all)
+
 elif task_vectors_merged_methods == 'ties_merging':
     merged_task_vector = ties_merging_func(task_vectors, task_wise_weights=task_wise_weights_all)
 
@@ -88,9 +92,6 @@ elif task_vectors_merged_methods == 'dare':
 
 else:
     raise ValueError(f"task_vectors_merged_methods must be task_arithmetic, got {task_vectors_merged_methods}")
-
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
 
 for key in base_adapter_weight.keys():
     base_adapter_weight[key] = base_adapter_weight[key].to(device)
