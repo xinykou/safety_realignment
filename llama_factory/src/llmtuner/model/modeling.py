@@ -18,6 +18,7 @@ from .tasks.dare import dare_func
 
 StateDict: TypeAlias = Dict[str, Tensor]
 
+
 class MaskModel(nn.Module):
     def __init__(self, llm, *,
                  task_vector_paths: List[str] = None,
@@ -28,7 +29,7 @@ class MaskModel(nn.Module):
         Args:
             llm: The language model to be used.
             task_vector_paths: The paths to all the task vectors. (the first is safe modules, the other is used to train new mask modules)
-            mask_module_path: The path to the trained mask module and a merged task vector. (for inference)
+            mask_module_path: The path to the trained mask module (for inference)
         """
         super().__init__()
         self.task_wise_weights = None
@@ -65,20 +66,27 @@ class MaskModel(nn.Module):
         else:
             raise ValueError("less a mode must be selected!")
 
-    def _init_task_wise_weight(self, num_models: int, init_values: float = None):
+    def _init_task_wise_weight(self):
+        if self.task_vectors_merged_methods == "task_arithmetic" or self.task_vectors_merged_methods == "dare":
+            init_values = 0.3
+        elif self.task_vectors_merged_methods == "ties_merging":
+            init_values = 0.4
+        elif self.task_vectors_merged_methods is None:
+            init_values = 0.3
+        else:
+            raise ValueError("init_values must be selected!")
+
         init_task_wise_weights = get_task_wise_weights(
             num_models=len(self.task_vectors),
-            init_values=0.3,
+            init_values=init_values,
         )
         self.task_wise_weights = nn.Parameter(init_task_wise_weights, requires_grad=False)
 
     def init_parameters(self):
         self._init_task_vector()
         self._init_mask()
-        self._init_task_wise_weight(
-            num_models=len(self.task_vectors),
-            init_values=0.3,
-        )
+        self._init_task_wise_weight()
+
         if self.mode == "inference":
             self.inference_mask_merge()
             pass
@@ -97,7 +105,7 @@ class MaskModel(nn.Module):
                 temperature=0.5,
                 state_dict=self.task_vectors[0],
                 init_value=0,
-                draw_sample=True,  # todo: True or Fasle ?
+                draw_sample=True,
             )
 
     def _init_task_vector(self):
@@ -134,13 +142,15 @@ class MaskModel(nn.Module):
 
         self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
 
-    def merged_methods_operation(self, all_task_vectors=List[Dict], **kwargs):
+    def merged_methods_operation(self, all_task_vectors=None):
         if self.task_vectors_merged_methods == "task_arithmetic":
-            return task_arithmetic_func(all_task_vectors, **kwargs)
+            return task_arithmetic_func(all_task_vectors, task_wise_weights=self.task_wise_weights)
         elif self.task_vectors_merged_methods == "ties_merging":
-            return ties_merging_func(all_task_vectors[0], all_task_vectors[1])
+            return ties_merging_func(all_task_vectors, task_wise_weights=self.task_wise_weights)
         elif self.task_vectors_merged_methods == "dare":
-            return dare_func(all_task_vectors[0], all_task_vectors[1])
+            return dare_func(all_task_vectors,
+                             task_wise_weights=self.task_wise_weights,
+                             weight_mask_rate=self.weight_mask_rate)
         else:
             if len(all_task_vectors) == 1:
                 return all_task_vectors[0]
@@ -173,8 +183,8 @@ class MaskModel(nn.Module):
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
 
     def train_mask_merge(self):
-        mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.binary_mask)
-        merged_mask_vector = self.merged_methods_operation(mask_vectors)  # todo: state_dict_mean or other methods for all vectors ?
+        mask_vectors = self.shared_mask.apply_mask(self.task_vectors, binary_mask=self.use_binary_mask)
+        merged_mask_vector = self.merged_methods_operation(all_task_vectors=mask_vectors)
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             org_key = key.replace("--", ".")
