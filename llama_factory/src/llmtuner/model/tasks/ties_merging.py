@@ -108,7 +108,7 @@ def state_dict_to_vector(state_dict: StateDict, remove_keys: List[str] = []) -> 
     Returns:
         torch.Tensor: A 1D tensor containing all the values in the state dict, sorted by key.
     """
-    shared_state_dict = copy.deepcopy(state_dict)
+    shared_state_dict = state_dict
     for key in remove_keys:
         if key in shared_state_dict:
             del shared_state_dict[key]
@@ -118,7 +118,7 @@ def state_dict_to_vector(state_dict: StateDict, remove_keys: List[str] = []) -> 
 
 def vector_to_state_dict(vector, state_dict, remove_keys: List[str] = []):
     # create a reference dict to define the order of the vector
-    reference_dict = copy.deepcopy(state_dict)
+    reference_dict = state_dict
     for key in remove_keys:
         if key in reference_dict:
             del reference_dict[key]
@@ -157,7 +157,7 @@ def ties_merging_func(task_vectors, task_wise_weights=None):
     else:
         # num * vectors
         topk = 20
-        reference_tv = copy.deepcopy(task_vectors[0])
+        reference_tv = task_vectors[0]
         tv_flat_checks = torch.vstack([state_dict_to_vector(check, remove_keys=[]) for check in task_vectors])
         merged_tv = ties_merging(tv_flat_checks, reset_thresh=topk, merge_func="dis-sum")
         merged_tv = vector_to_state_dict(merged_tv, reference_tv, remove_keys=[])
