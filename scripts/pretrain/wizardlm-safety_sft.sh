@@ -17,7 +17,7 @@ export CUDA_VISIBLE_DEVICES=4,5
 #CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 deepspeed --num_gpus 6 --master_port=9901 src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=7 deepspeed --num_gpus 1 --num_nodes 1 --master_port=12089 src/train_bash.py \
 #    --deepspeed ../scripts/performance/deepspeed_peft.json \
-save_name=Safe-WizardLM-7b-sft
+save_name=Safe-WizardLM-7b-pretrain_sft
 pretrain_path=/home/yx/model_cache/WizardLM-7B-Uncensored
 accelerate launch --main_process_port 28702 --config_file ../scripts/pretrain/dpo_config.yaml src/train_bash.py \
     --stage sft \
