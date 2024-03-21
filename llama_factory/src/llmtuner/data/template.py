@@ -505,17 +505,17 @@ _register_template(
 )
 
 _register_template(
-    name="safety_inference",
-    format_user=StringFormatter(slots=[{"bos_token"}, "[INST] {{content}} [/INST] Sure,"]),
-    # format_system=StringFormatter(slots=["<<SYS>>\n{{content}}\n<</SYS>>\n\n"]),
-)
-
-_register_template(
     name="WizardLM-7B",
     format_user=StringFormatter(slots=[{"bos_token"}, "{{content}}\n\n### Response:"]),
     format_system=StringFormatter(slots=["<<SYS>>\n{{content}}\n<</SYS>>\n\n"]),
 )
 
+_register_template(
+    name="TinyLlama-1.1B",
+    format_user=StringFormatter(slots=[{"bos_token"}, "{{content}}\n\n### Response:"]),
+    format_system=StringFormatter(slots=["<<SYS>>\n{{content}}\n<</SYS>>\n\n"]),
+    default_system="Write a response that appropriately completes the request.\n\n"
+)
 
 _register_template(
     name="llama2_zh",
