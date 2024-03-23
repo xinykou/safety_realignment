@@ -33,7 +33,7 @@ dataset_name=dangerousqa
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
-model_type=WizardLM-multi_realign
+model_type=WizardLM-multi_realign_dpo
 pretained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
 multi_dpo_model_name=Safe-WizardLM-7b-multi_realign_mask_dpo-dare/checkpoint-100
 output_dir=../safety_results/$model_type/$dataset_name--dare
