@@ -17,7 +17,7 @@ cd "$working_path"
 
 
 # ---------------------
-dataset_name=BeaverTails
+#dataset_name=BeaverTails
 #dataset_path=harmful_questions/$dataset_name/test.jsonl
 # ------------------------------------
 #dataset_name=catqa_english
@@ -29,7 +29,7 @@ dataset_name=BeaverTails
 #dataset_name=shadow-alignment
 #dataset_path=harmful_questions/$dataset_name/eval.json
 # -------------------------------------
-#dataset_name=dangerousqa
+dataset_name=dangerousqa
 #dataset_path=harmful_questions/$dataset_name/dangerousqa.json
 # -------------------------------------
 
