@@ -5,7 +5,7 @@ from transformers.integrations import is_deepspeed_zero3_enabled
 from trl import AutoModelForCausalLMWithValueHead
 
 from .adapter import init_adapter
-from .modeling import MaskModel
+from .modeling import PeftMaskModel, FTMaskModel
 from .patcher import patch_config, patch_model, patch_tokenizer, patch_valuehead_model
 from .utils import load_valuehead_params, register_autoclass
 from ..extras.logging import get_logger
@@ -85,13 +85,20 @@ def load_model_and_tokenizer(
             **config_kwargs,
         )
         if model_args.use_mask:
-            model = MaskModel(model,
-                              task_vector_paths=model_args.
-                              task_vector_paths,
-                              mask_module_path=model_args.mask_module_path,
-                              binary_mask=model_args.binary_mask,
-                              task_vectors_merged_methods=model_args.task_vectors_merged_methods,
-                              )
+            if model_args.mask_mode == "peft":
+                model = PeftMaskModel(model,
+                                      task_vector_paths=model_args.task_vector_paths,
+                                      mask_module_path=model_args.mask_module_path,
+                                      binary_mask=model_args.binary_mask,
+                                      task_vectors_merged_methods=model_args.task_vectors_merged_methods,
+                                      )
+            elif model_args.mask_mode == "full":
+                model = FTMaskModel(model,
+                                    task_vector_paths=model_args.task_vector_paths,
+                                    mask_module_path=model_args.mask_module_path,
+                                    binary_mask=model_args.binary_mask,
+                                    task_vectors_merged_methods=model_args.task_vectors_merged_methods,
+                                    )
         else:
             print("-----This process is not masked ------")
 

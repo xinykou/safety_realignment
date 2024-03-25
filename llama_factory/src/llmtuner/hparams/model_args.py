@@ -25,6 +25,10 @@ class ModelArguments:
         default=False,
         metadata={"help": "Whether or not to use the mask for model."},
     )
+    mask_mode: Optional[Literal["peft", "full"]] = field(
+        default="peft",
+        metadata={"help": "The mask mode to use: peft, full."},
+    )
     safety_eval: Optional[bool] = field(
         default=False,
         metadata={"help": "Whether or not to use the model for safety evaluation."},
