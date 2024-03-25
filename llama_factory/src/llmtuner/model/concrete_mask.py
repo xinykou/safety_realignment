@@ -1,10 +1,11 @@
-from torch import nn, Tensor
+from typing import Optional, List, Dict
+
 import torch
-from typing import Optional, List, Any, Callable, Dict
 from torch import Tensor, nn
 from typing_extensions import TypeAlias
 
 StateDict: TypeAlias = Dict[str, Tensor]
+
 
 class ConcreteMask(nn.Module):
     """

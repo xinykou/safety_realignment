@@ -286,7 +286,7 @@ class FTMaskModel(nn.Module):
             num_models=len(self.task_vectors),
             init_values=init_values,
         )
-        self.task_wise_weights = nn.Parameter(init_task_wise_weights, requires_grad=False)
+        self.task_wise_weights = torch.tensor(init_task_wise_weights, requires_grad=False)
         self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
 
     def init_parameters(self):
@@ -357,7 +357,7 @@ class FTMaskModel(nn.Module):
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             org_key = key.replace("--", ".")
-            new_state_dict[key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
+            new_state_dict[org_key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
         merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=False)
