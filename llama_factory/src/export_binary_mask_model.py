@@ -2,13 +2,13 @@ import os
 
 from transformers import AutoModelForCausalLM
 
-from llama_factory.src.llmtuner.model.modeling import MaskModel
+from llama_factory.src.llmtuner.model.modeling import PeftMaskModel
 import argparse
 
 def export_binary_mask_model(model_path, lora_path, mask_module_path):
     """export binary mask lora model to mask_path/binary_mask_merged"""
     llm = AutoModelForCausalLM.from_pretrained(model_path)
-    model = MaskModel(llm, task_vector_paths=[lora_path], mask_module_path=mask_module_path, binary_mask=True)
+    model = PeftMaskModel(llm, task_vector_paths=[lora_path], mask_module_path=mask_module_path, binary_mask=True)
     model.model.save_pretrained(os.path.join(mask_module_path, "binary_mask_merged"), safe_serialization=False)
     model.model.config.save_pretrained(os.path.join(mask_module_path, "binary_mask_merged"), safe_serialization=False)
 
