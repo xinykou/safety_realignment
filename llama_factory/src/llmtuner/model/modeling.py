@@ -351,6 +351,26 @@ class FTMaskModel(nn.Module):
             else:
                 raise ValueError("task_vectors_merged_methods must be selected!")
 
+    def inference_mask_merge(self):
+        if len(self.task_vectors) >= 1:
+            concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
+            if self.use_binary_mask:
+                concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
+            else:
+                concrete_mask = {k: v.detach() for k, v in concrete_mask.items()}
+            mask_vectors = self.shared_mask.apply_mask(self.task_vectors, concrete_mask)
+        else:
+            raise ValueError("task_vectors must be selected!")
+        # todo: every  task is evaluated by the individual task vector ?
+        merged_mask_vector = self.merged_methods_operation(all_task_vectors=mask_vectors)
+        new_state_dict = {}
+        for key, val in merged_mask_vector.items():
+            org_key = key.replace("--", ".")
+            new_state_dict[org_key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
+        merged_mask_vector_dict = new_state_dict
+        accessor = NamedMemberAccessor(self.model)
+        accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=False)
+
     def train_mask_merge(self):
         mask_vectors = self.shared_mask.apply_mask(self.task_vectors)
         merged_mask_vector = self.merged_methods_operation(all_task_vectors=mask_vectors)
