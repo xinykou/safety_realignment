@@ -19,7 +19,7 @@ save_name=Safe-TinyLlama-1.1b-sft-alpaca_zh
 safe_fullparameter_path=../saved_models/pretrain/Safe-TinyLlama-1.1b-pretrain_sft_after_dpo/checkpoint-8745
 
 #accelerate launch --config_file ../scripts_ft/base/train/sft_config.yaml src/train_bash.py \
-deepspeed --include localhost:2,3,4,5  --master_port=9901 src/train_bash.py \
+deepspeed --include localhost:0,1  --master_port=9901 src/train_bash.py \
     --deepspeed ../scripts_ft/base/train/deepspeed_config.json \
     --stage sft \
     --do_train \
@@ -27,16 +27,16 @@ deepspeed --include localhost:2,3,4,5  --master_port=9901 src/train_bash.py \
     --dataset alpaca_gpt4_zh \
     --template TinyLlama-1.1B \
     --finetuning_type full \
-    --output_dir /media/4/yx/saved_models/pretrain/$save_name \
+    --output_dir ../saved_models/sft/$save_name \
     --overwrite_cache \
     --overwrite_output_dir \
     --per_device_train_batch_size 2 \
     --gradient_accumulation_steps 4 \
     --lr_scheduler_type cosine \
-    --save_strategy epoch \
-    --logging_steps 10 \
+    --save_steps 200 \
+    --logging_steps 1 \
     --learning_rate 1e-5 \
-    --num_train_epochs 3 \
+    --num_train_epochs 2 \
     --plot_loss \
     --report_to wandb \
     --fp16 \
