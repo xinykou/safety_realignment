@@ -33,17 +33,17 @@ deepspeed --include localhost:0,1  --master_port=9901 src/train_bash.py \
     --per_device_train_batch_size 2 \
     --gradient_accumulation_steps 4 \
     --lr_scheduler_type cosine \
-    --save_strategy epoch \
+    --save_steps 100 \
     --logging_steps 10 \
-    --learning_rate 1e-5 \
-    --num_train_epochs 3 \
+    --learning_rate 1e-6 \
+    --num_train_epochs 2 \
     --plot_loss \
     --report_to wandb \
     --fp16 \
     --save_safetensors false \
     --run_name $save_name
 
-
+#--save_strategy epoch \
 #--save_steps 1 \
 #--max_samples 30
 ##    --lora_bf16_mode True
