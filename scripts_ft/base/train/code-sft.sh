@@ -13,7 +13,6 @@ cd "$working_path"
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=false
 
-
 #python src/train_bash.py \
 save_name=Safe-TinyLlama-1.1b-sft-code
 safe_fullparameter_path=../saved_models/pretrain/Safe-TinyLlama-1.1b-pretrain_sft_after_dpo/checkpoint-8745
