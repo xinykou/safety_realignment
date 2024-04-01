@@ -12,7 +12,7 @@ cd "$working_path"
 # 设置环境变量
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=false
-#export CUDA_VISIBLE_DEVICES=7
+export CUDA_VISIBLE_DEVICES=7
 #python src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=0,1,2,3,4,5 deepspeed --num_gpus 6 --master_port=9901 src/train_bash.py \
 #CUDA_VISIBLE_DEVICES=7 deepspeed --num_gpus 1 --num_nodes 1 --master_port=12089 src/train_bash.py \
@@ -24,14 +24,12 @@ base_adapter_name_or_path=../saved_models/pretrain/Safe-WizardLM-7b-pretrain_sft
 adapter_name_or_path=../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500
 
 #accelerate launch --main_process_port 28708 --config_file ../scripts/pretrain/dpo_config.yaml src/train_bash.py \
-#python src/train_bash.py \
-deepspeed --include localhost:6,7 --master_port=18328 src/train_bash.py \
+python src/train_bash.py \
     --stage dpo \
     --do_train \
     --use_mask True \
-    --mask_mode full \
-    --model_name_or_path /media/4/zsf/model/TinyLlama-1.1B-Chat-v1.0 \
-    --task_vector_paths /media/4/zsf/model/TinyLlama-1.1B-Chat-v1.0 \
+    --model_name_or_path $pretrain_path \
+    --task_vector_paths $base_adapter_name_or_path $adapter_name_or_path \
     --dataset pku_seferlhf_realign_dpo_5k \
     --template WizardLM-7B \
     --finetuning_type mask \
@@ -50,8 +48,7 @@ deepspeed --include localhost:6,7 --master_port=18328 src/train_bash.py \
     --fp16 \
     --lora_rank 256 \
     --save_safetensors false \
-    --run_name $save_name \
-    --deepspeed ../scripts/pretrain/dpo_deepspeed_config.json
+    --run_name $save_name
 
 ##    --lora_bf16_mode True
 ##    --run_name peft_alpaca_en_llama2-chat-7b \
