@@ -50,6 +50,7 @@ def run_dpo(
     # Initialize our Trainer
     if finetuning_args.finetuning_type == "mask":
         trainer = MaskDPOTrainer(
+            mask_mode=model_args.mask_mode,
             beta=finetuning_args.dpo_beta,
             loss_type=finetuning_args.dpo_loss,
             ftx_gamma=finetuning_args.dpo_ftx,

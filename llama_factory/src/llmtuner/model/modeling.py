@@ -1,25 +1,25 @@
 import copy
 import os.path
 import warnings
+from typing import List, Any, Callable, Dict
+
 import torch
+from peft import PeftModel
+from safetensors.torch import load_file
 from torch import Tensor, nn
-from typing import Optional, List, Any, Callable, Dict
+from torch.nn.utils._named_member_accessor import NamedMemberAccessor
 from typing_extensions import TypeAlias
 
-from peft import PeftConfig, PeftModelForCausalLM, PeftModel
-from safetensors.torch import load_file
-from torch.nn.utils._named_member_accessor import NamedMemberAccessor
-from .tasks.arithmetic import state_dict_sub, state_dict_avg, get_task_wise_weights
 from .concrete_mask import ConcreteMask
-
+from .tasks.arithmetic import state_dict_sub, get_task_wise_weights
+from .tasks.dare import dare_func
 from .tasks.task_arithmetic import task_arithmetic_func
 from .tasks.ties_merging import ties_merging_func
-from .tasks.dare import dare_func
 
 StateDict: TypeAlias = Dict[str, Tensor]
 
 
-class MaskModel(nn.Module):
+class PeftMaskModel(nn.Module):
     def __init__(self, llm, *,
                  task_vector_paths: List[str] = None,
                  mask_module_path: str = None,
@@ -109,7 +109,8 @@ class MaskModel(nn.Module):
             )
 
     def _init_task_vector(self):
-        assert len(self.task_vector_paths) >= 1, "at least one task vector is required"  # the first is base weight, the others are task vectors
+        assert len(
+            self.task_vector_paths) >= 1, "at least one task vector is required"  # the first is base weight, the others are task vectors
         if len(self.task_vector_paths) >= 1:  # for train new mask modules, the first is base weight,
             self.task_vectors = []
             with torch.no_grad():
@@ -170,7 +171,8 @@ class MaskModel(nn.Module):
                 current_task_vectors.append(mask_vector)
         else:
             raise ValueError("task_vectors must be selected!")
-        merged_mask_vector = self.merged_methods_operation(all_task_vectors=current_task_vectors)  # todo: every  task is evaluated by the individual task vector ?
+        merged_mask_vector = self.merged_methods_operation(
+            all_task_vectors=current_task_vectors)  # todo: every  task is evaluated by the individual task vector ?
         new_state_dict = {}
         for key, val in merged_mask_vector.items():
             org_key = key.replace("--", ".")
@@ -195,6 +197,190 @@ class MaskModel(nn.Module):
         merged_mask_vector_dict = new_state_dict
         accessor = NamedMemberAccessor(self.model)
         accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=True)
+
+    def forward(self, *args, **kwargs):
+        # every time task vector is updated by `shared_mask`
+        if self.mode == "train":
+            self.train_mask_merge()
+        elif self.mode == "inference":
+            pass
+
+        return self.model(*args, **kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            attr = getattr(self.model, name)
+            if isinstance(attr, Callable):
+                warnings.warn(f"forwarding `{name}` to the underlying model", UserWarning)
+            return attr
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        try:
+            super().__setattr__(name, value)
+        except AttributeError:
+            setattr(self.model, name, value)
+
+    def to(self, device):
+        # Move the model to the specified device
+        self.model.to(device)
+        self.shared_mask.to(device)
+        return self
+
+
+class FTMaskModel(nn.Module):
+    def __init__(self, llm, *,
+                 task_vector_paths: List[str] = None,
+                 mask_module_path: str = None,
+                 binary_mask=False,
+                 task_vectors_merged_methods=None):
+        """
+        Args:
+            llm: The language model to be used.
+            task_vector_paths: The paths to all the trained model on downstream task.
+            mask_module_path: The path to the trained mask module (for inference)
+        """
+        super().__init__()
+        if task_vector_paths is not None:
+            assert len(task_vector_paths) >= 1
+
+        self.mask_module_path = mask_module_path
+        self.task_vector_paths = task_vector_paths
+
+        if mask_module_path is not None:
+            raise NotImplementedError
+        elif task_vector_paths is not None:
+            self.model = llm
+        else:
+            raise ValueError("mask_module_path or task_vector_paths must be provided")
+
+        self.use_binary_mask = binary_mask
+        self.task_vectors_merged_methods = task_vectors_merged_methods
+        # save result after masking the task vector, is used for inference, because the mask is not updated
+        self.init_parameters()
+
+    @property
+    def mode(self):
+        if self.task_vector_paths is not None:
+            if len(self.task_vector_paths) == 0 and self.mask_module_path is not None:
+                return "inference"
+            elif len(self.task_vector_paths) >= 1 and self.mask_module_path is None:
+                return "train"
+            else:
+                raise ValueError("mode must be selected!")
+        else:
+            raise ValueError("less a mode must be selected!")
+
+    def _init_task_wise_weight(self):
+        if self.task_vectors_merged_methods == "task_arithmetic" or self.task_vectors_merged_methods == "dare":
+            init_values = 0.3
+        elif self.task_vectors_merged_methods == "ties_merging":
+            init_values = 0.4
+        elif self.task_vectors_merged_methods is None:
+            init_values = 0.3
+        else:
+            raise ValueError("init_values must be selected!")
+
+        init_task_wise_weights = get_task_wise_weights(
+            num_models=len(self.task_vectors),
+            init_values=init_values,
+        )
+        self.task_wise_weights = torch.tensor(init_task_wise_weights, requires_grad=False)
+        self.gpu_base_weight = {k: v.to(self.model.device) for k, v in self.base_weight.items()}
+
+    def init_parameters(self):
+        self._init_task_vector()
+        self._init_mask()
+        self._init_task_wise_weight()
+
+        if self.mode == "inference":
+            self.inference_mask_merge()
+        elif self.mode == "train":
+            self.model.requires_grad_(False)
+        else:
+            raise ValueError("mode must be selected!")
+
+    def _init_mask(self):
+        if self.mask_module_path is not None:
+            raise NotImplementedError
+        else:
+            self.shared_mask = ConcreteMask(
+                temperature=0.5,
+                state_dict=self.task_vectors[0],
+                init_value=0,
+                draw_sample=True,
+            )
+
+    def _init_task_vector(self):
+        assert len(
+            self.task_vector_paths) >= 1, "at least one task vector is required"
+        if len(self.task_vector_paths) >= 1:
+            self.task_vectors = []
+            with torch.no_grad():
+                for index, path in enumerate(self.task_vector_paths):
+                    safetensors_path = os.path.join(path, "model.safetensors")
+                    bin_path = os.path.join(path, "pytorch_model.bin")
+                    if os.path.exists(safetensors_path):
+                        weight = load_file(safetensors_path)
+                    elif os.path.exists(bin_path):
+                        weight = torch.load(bin_path)
+                    else:
+                        raise ValueError(f"Cannot find model at {path}")
+
+                    self.base_weight = self.model.state_dict()
+                    _vector = state_dict_sub(weight, self.base_weight)
+                    trans_task_vector = {}
+                    for key, val in _vector.items():
+                        new_key = key.replace(".", "--")
+                        trans_task_vector[new_key] = val.to(self.model.device)
+                    self.task_vectors.append(trans_task_vector)
+
+    def merged_methods_operation(self, all_task_vectors=None):
+        if self.task_vectors_merged_methods == "task_arithmetic":
+            return task_arithmetic_func(all_task_vectors, task_wise_weights=self.task_wise_weights)
+        elif self.task_vectors_merged_methods == "ties_merging":
+            return ties_merging_func(all_task_vectors, task_wise_weights=self.task_wise_weights)
+        elif self.task_vectors_merged_methods == "dare":
+            return dare_func(all_task_vectors,
+                             task_wise_weights=self.task_wise_weights,
+                             weight_mask_rate=self.weight_mask_rate)
+        else:
+            if len(all_task_vectors) == 1:
+                return all_task_vectors[0]
+            else:
+                raise ValueError("task_vectors_merged_methods must be selected!")
+
+    def inference_mask_merge(self):
+        if len(self.task_vectors) >= 1:
+            concrete_mask = self.shared_mask._draw_mask(binary_mask=self.use_binary_mask)
+            if self.use_binary_mask:
+                concrete_mask = {k: v.float() for k, v in concrete_mask.items()}
+            else:
+                concrete_mask = {k: v.detach() for k, v in concrete_mask.items()}
+            mask_vectors = self.shared_mask.apply_mask(self.task_vectors, concrete_mask)
+        else:
+            raise ValueError("task_vectors must be selected!")
+        # todo: every  task is evaluated by the individual task vector ?
+        merged_mask_vector = self.merged_methods_operation(all_task_vectors=mask_vectors)
+        new_state_dict = {}
+        for key, val in merged_mask_vector.items():
+            org_key = key.replace("--", ".")
+            new_state_dict[org_key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
+        merged_mask_vector_dict = new_state_dict
+        accessor = NamedMemberAccessor(self.model)
+        accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=False)
+
+    def train_mask_merge(self):
+        mask_vectors = self.shared_mask.apply_mask(self.task_vectors)
+        merged_mask_vector = self.merged_methods_operation(all_task_vectors=mask_vectors)
+        new_state_dict = {}
+        for key, val in merged_mask_vector.items():
+            org_key = key.replace("--", ".")
+            new_state_dict[org_key] = (val + self.gpu_base_weight[org_key]).to(self.model.device)
+        merged_mask_vector_dict = new_state_dict
+        accessor = NamedMemberAccessor(self.model)
+        accessor.swap_tensors_dict(merged_mask_vector_dict, allow_missing=False)
 
     def forward(self, *args, **kwargs):
         # every time task vector is updated by `shared_mask`

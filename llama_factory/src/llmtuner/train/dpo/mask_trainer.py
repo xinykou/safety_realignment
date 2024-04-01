@@ -31,6 +31,9 @@ IGNORE_INDEX = -100
 
 
 class MaskDPOTrainer(CustomDPOTrainer):
+    def __init__(self, mask_mode="peft", *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mask_mode = mask_mode
 
     def _save(self, output_dir: Optional[str] = None, state_dict=None):
         # If we are executing this function, we are the process zero, so we don't check for that.
@@ -38,15 +41,29 @@ class MaskDPOTrainer(CustomDPOTrainer):
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
 
-        # save masks and task_vectors
-        torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
-        torch.save(self.model.task_vectors, os.path.join(output_dir, "task_vectors.bin"))
+        if self.mask_mode== "peft":
+            # save masks and task_vectors
+            torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
+            torch.save(self.model.task_vectors, os.path.join(output_dir, "task_vectors.bin"))
+            # save masked adapter model
+            state_dict = self.model.model.state_dict()
+            self.model.model.save_pretrained(
+                output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+            )
+        elif self.mask_mode == "full":
+            # torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
+            # save mask merged model
+            self.model.model.save_pretrained(
+                output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+            )
+            # save binary mask merged model
+            binary_output_dir = os.path.join(output_dir, "binary_mask_merged")
+            self.model.use_binary_mask = True
+            self.model.inference_mask_merge()
+            self.model.model.save_pretrained(
+                binary_output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+            )
 
-        # save masked adapter model
-        state_dict = self.model.model.state_dict()
-        self.model.model.save_pretrained(
-            output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
-        )
 
         if self.tokenizer is not None:
             self.tokenizer.save_pretrained(output_dir)
