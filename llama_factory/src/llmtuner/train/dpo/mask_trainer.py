@@ -41,7 +41,7 @@ class MaskDPOTrainer(CustomDPOTrainer):
         os.makedirs(output_dir, exist_ok=True)
         logger.info(f"Saving model checkpoint to {output_dir}")
 
-        if self.mask_mode== "peft":
+        if self.mask_mode == "peft":
             # save masks and task_vectors
             torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
             torch.save(self.model.task_vectors, os.path.join(output_dir, "task_vectors.bin"))
@@ -53,13 +53,16 @@ class MaskDPOTrainer(CustomDPOTrainer):
         elif self.mask_mode == "full":
             # torch.save(self.model.shared_mask, os.path.join(output_dir, "shared_mask.bin"))
             # save mask merged model
+            state_dict = self.model.model.state_dict()
             self.model.model.save_pretrained(
                 output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
             )
+
             # save binary mask merged model
             binary_output_dir = os.path.join(output_dir, "binary_mask_merged")
             self.model.use_binary_mask = True
             self.model.inference_mask_merge()
+            state_dict = self.model.model.state_dict()
             self.model.model.save_pretrained(
                 binary_output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
             )
