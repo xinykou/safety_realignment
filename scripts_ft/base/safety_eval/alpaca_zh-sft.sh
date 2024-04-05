@@ -34,9 +34,17 @@ dataset_name=BeaverTails
 # -------------------------------------
 
 model_type=TinyLlama-sft
-sft_model_name=../saved_models/sft/Safe-TinyLlama-1.1b-sft-alpaca_zh/checkpoint-6000
-output_dir=../safety_results/$model_type/$dataset_name--alpaca_zh
+sft_model_name=../saved_models/sft/Safe-TinyLlama-1.1b-sft-alpaca_zh/checkpoint-4600
 
+
+# 字符串列表
+dataset_name_list=("BeaverTails" "harmfulqa" "shadow-alignment" "dangerousqa")  # ("BeaverTails" "catqa_english" "harmfulqa" "shadow-alignment" "dangerousqa")
+
+# 使用for循环遍历字符串列表
+for dataset_name in "${dataset_name_list[@]}"; do
+    echo "current datasets: $dataset_name"
+
+output_dir=../safety_results/$model_type/$dataset_name--alpaca_zh
 ## generate sft responses
 python src/train_bash.py \
     --stage sft \
@@ -47,7 +55,7 @@ python src/train_bash.py \
     --template TinyLlama-1.1B \
     --output_dir $output_dir \
     --overwrite_output_dir \
-    --per_device_eval_batch_size 4 \
+    --per_device_eval_batch_size 16 \
     --predict_with_generate \
     --do_sample False \
     --fp16
@@ -59,3 +67,4 @@ python evaluation/safety/gpt4_judge_preference.py \
   --response_file $output_dir/generated_predictions.json \
   --save_path $output_dir \
   --change_api_group
+done
