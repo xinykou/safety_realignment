@@ -16,13 +16,13 @@ export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=true
 
 # ---------------task: copa-----------------------------------------------------------------------------------------------
-sft_model_path=../saved_models/sft/Safe-TinyLlama-1.1b-sft-alpaca_zh/checkpoint-6000
+sft_model_path=../saved_models/sft/Safe-TinyLlama-1.1b-sft-alpaca_zh/checkpoint-4600
 
 
 ## Run evaluation
 python ../lm_eval/__main__.py \
     --model hf \
     --model_args pretrained=$sft_model_path \
-    --tasks copa \
+    --tasks xcopa_zh \
     --batch_size 32
 
