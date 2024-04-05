@@ -47,7 +47,7 @@ python src/train_bash.py \
     --template TinyLlama-1.1B \
     --output_dir $output_dir \
     --overwrite_output_dir \
-    --per_device_eval_batch_size 4 \
+    --per_device_eval_batch_size 16 \
     --predict_with_generate \
     --do_sample False \
     --fp16
