@@ -38,13 +38,14 @@ realign_model_name=../saved_models/realign/Safe-TinyLlama-1.1b-realign_mask_dpo-
 
 
 # 字符串列表
-dataset_name_list=("catqa_english" "BeaverTails" "harmfulqa" "shadow-alignment" "dangerousqa") # ("BeaverTails" "catqa_english" "harmfulqa" "shadow-alignment" "dangerousqa")
+dataset_name_list=("BeaverTails" "catqa_english" "harmfulqa" "shadow-alignment" "dangerousqa") # ("BeaverTails" "catqa_english" "harmfulqa" "shadow-alignment" "dangerousqa")
 
 # 使用for循环遍历字符串列表
 for dataset_name in "${dataset_name_list[@]}"; do
     echo "current datasets: $dataset_name"
 
 output_dir=../safety_results/$model_type/$dataset_name--math
+
 ## generate sft responses
 python src/train_bash.py \
     --stage sft \
