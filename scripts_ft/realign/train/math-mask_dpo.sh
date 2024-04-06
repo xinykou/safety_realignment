@@ -37,7 +37,7 @@ deepspeed --include localhost:6,7 --master_port=18328 src/train_bash.py \
     --output_dir /media/4/yx/saved_models/realign/$save_name \
     --overwrite_cache \
     --overwrite_output_dir \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 8 \
     --gradient_accumulation_steps 4 \
     --lr_scheduler_type cosine \
     --logging_steps 1 \
