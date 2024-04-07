@@ -15,7 +15,7 @@ export CUDA_VISIBLE_DEVICES=0
 export PYTHONPATH="${three_levels_up_path}"
 export WANDB_DISABLED=true
 
-merged_methods=ties_merging
+merged_methods=task_arithmetic
 pretrained_model_path=/home/yx/model_cache/WizardLM-7B-Uncensored
 base_adaptor_path=../saved_models/pretrain/Safe-WizardLM-7b-pretrain_sft_after_dpo/checkpoint-4371
 output_dir=../saved_models/multi_sft/$merged_methods
@@ -30,7 +30,7 @@ if [ "$task_name" = "gsm8k" ]; then
 fi
 
 python ./src/llmtuner/model/task_arithmetic_eval.py \
-      --task_vectors_merged_methods task_arithmetic \
+      --task_vectors_merged_methods $merged_methods \
       --base_adapter_name_or_path $base_adaptor_path \
       --adapter_name_or_paths ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_zh/checkpoint-1500 \
        ../saved_models/sft/Safe-WizardLM-7b-sft-alpaca_en/checkpoint-1500 \
