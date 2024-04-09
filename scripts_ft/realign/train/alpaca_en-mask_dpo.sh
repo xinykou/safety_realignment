@@ -32,7 +32,7 @@ deepspeed --include localhost:6,7 --master_port=18328 src/train_bash.py \
     --model_name_or_path $base_name_or_path \
     --task_vector_paths $downtask_name_or_path \
     --dataset pku_seferlhf_realign_dpo_5k \
-    --template TinyLlama-1.1B\
+    --template TinyLlama-1.1B \
     --finetuning_type mask \
     --output_dir /media/4/yx/saved_models/realign/$save_name \
     --overwrite_cache \
