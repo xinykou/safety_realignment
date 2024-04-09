@@ -10,6 +10,7 @@ from tasks.dare import dare_func
 from tasks.ties_merging import ties_merging_func
 from tasks.arithmetic import get_task_wise_weights
 import shutil
+from safetensors.torch import load_file
 
 parser = argparse.ArgumentParser(description='Evaluate an arithmetic expression')
 parser.add_argument('--task_vectors_merged_methods',
@@ -65,16 +66,44 @@ task_wise_weights_all = nn.Parameter(init_task_wise_weights, requires_grad=False
 task_wise_weights_all = task_wise_weights_all.to(device)
 
 
-task_vectors = []
-base_adapter_weight = torch.load(os.path.join(base_adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
-source_path = os.path.join(base_adapter_name_or_path, 'adapter_config.json')  # 源文件路径
-destination_path = output_dir  # 目标文件路径
+# 定义一个函数用于将bf16转换为float16
+def bf16_to_float16(value):
+    return torch.tensor(value, dtype=torch.float16)
+
+
 if not os.path.exists(output_dir):
     os.makedirs(output_dir, exist_ok=True)
-shutil.copy(source_path, destination_path)
+task_vectors = []
+if 'adapter_model.bin' in os.listdir(base_adapter_name_or_path):
+    base_adapter_weight = torch.load(os.path.join(base_adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
+    source_path = os.path.join(base_adapter_name_or_path, 'adapter_config.json')  # 源文件路径
+    shutil.copy(source_path, output_dir)
+    saved_adapter_weight_path = os.path.join(output_dir, 'adapter_model.bin')
+else:
+    if 'pytorch_model.bin' in os.listdir(base_adapter_name_or_path):
+        base_adapter_weight = torch.load(os.path.join(base_adapter_name_or_path, 'pytorch_model.bin'), map_location="cpu")
+    else:
+        base_adapter_weight = load_file(os.path.join(base_adapter_name_or_path, 'model.safetensors'))
+    # 遍历字典中的值，并将bf16转换为float16
+    for name, value in base_adapter_weight.items():
+        base_adapter_weight[name] = bf16_to_float16(value)
+
+    source_path = os.path.join(base_adapter_name_or_path, 'config.json')  # 源文件路径
+    shutil.copy(source_path, output_dir)
+    source_path = os.path.join(base_adapter_name_or_path, 'special_tokens_map.json')
+    shutil.copy(source_path, output_dir)
+    source_path = os.path.join(base_adapter_name_or_path, 'tokenizer_config.json')
+    shutil.copy(source_path, output_dir)
+    source_path = os.path.join(base_adapter_name_or_path, 'tokenizer.model')
+    shutil.copy(source_path, output_dir)
+    saved_adapter_weight_path = os.path.join(output_dir, 'pytorch_model.bin')
+
 
 for adapter_name_or_path in adapter_name_or_paths:
-    current_adapter_weight = torch.load(os.path.join(adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
+    if 'adapter_model.bin' in os.listdir(adapter_name_or_path):
+        current_adapter_weight = torch.load(os.path.join(adapter_name_or_path, 'adapter_model.bin'), map_location="cpu")
+    else:
+        current_adapter_weight = torch.load(os.path.join(adapter_name_or_path, 'pytorch_model.bin'), map_location="cpu")
     current_task_vector = {}
     for key in current_adapter_weight.keys():
         current_task_vector[key] = (current_adapter_weight[key] - base_adapter_weight[key]).to(device)
@@ -96,12 +125,12 @@ else:
 for key in base_adapter_weight.keys():
     base_adapter_weight[key] = base_adapter_weight[key].to(device)
 
-saved_adapter_weight_path = os.path.join(output_dir, 'adapter_model.bin')
+
 saved_adapter_weight = {}
 for key, value in merged_task_vector.items():
     saved_adapter_weight[key] = base_adapter_weight[key] + merged_task_vector[key]
 
-torch.save(saved_adapter_weight, os.path.join(output_dir, 'adapter_model.bin'))
+torch.save(saved_adapter_weight, saved_adapter_weight_path)
 
 
 print(f"Save the: ({task_vectors_merged_methods}) merged adapter weight to {saved_adapter_weight_path}")
