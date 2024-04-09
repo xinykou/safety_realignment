@@ -252,6 +252,9 @@ class FTMaskModel(nn.Module):
             raise NotImplementedError
         elif task_vector_paths is not None:
             self.model = llm
+            if len(self.task_vector_paths) > 1:
+                for param in self.model.parameters():
+                    param.data = param.data.half()
         else:
             raise ValueError("mask_module_path or task_vector_paths must be provided")
 
@@ -273,7 +276,9 @@ class FTMaskModel(nn.Module):
             raise ValueError("less a mode must be selected!")
 
     def _init_task_wise_weight(self):
-        if self.task_vectors_merged_methods == "task_arithmetic" or self.task_vectors_merged_methods == "dare":
+        if self.task_vectors_merged_methods == "task_arithmetic":
+            init_values = 0.04
+        elif self.task_vectors_merged_methods == "dare":
             init_values = 0.3
         elif self.task_vectors_merged_methods == "ties_merging":
             init_values = 0.4
