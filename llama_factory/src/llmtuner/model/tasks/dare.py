@@ -52,8 +52,8 @@ def _fuse_weights(task_wise_weight: Tensor, tensors: List[Tensor]):
 def dare_func(task_vectors, task_wise_weights, weight_mask_rate=0.2):
     if len(task_vectors) == 0:
         raise ValueError("task_vectors must not be empty")
-    elif len(task_vectors) == 1:
-        return task_vectors[0]
+    # elif len(task_vectors) == 1:
+    #     return task_vectors[0]
     else:
         for task_vector in task_vectors:
             for key, para_value in task_vector.items():
