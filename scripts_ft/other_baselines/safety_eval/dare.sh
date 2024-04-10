@@ -15,7 +15,7 @@ export WANDB_DISABLED=true
 # 进入工作目录: ./llama_factory
 cd "$working_path"
 
-task_name_list=("xcopa_zh" "xnli_hi" "gsm8k" "HumanEval")
+task_name_list=("copa" "xcopa_zh" "xnli_hi" "gsm8k" "HumanEval")
 
 for task_name in "${task_name_list[@]}"; do
     echo "current task: $task_name"
