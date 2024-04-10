@@ -29,19 +29,19 @@ output_dir=../safety_results/other_baselines/$safety_methods-$task_name-$dataset
 
 
 ## generate sft responses
-python src/train_bash.py \
-    --stage sft \
-    --do_predict \
-    --safety_eval True \
-    --model_name_or_path $trained_model_path \
-    --dataset ${dataset_name} \
-    --template TinyLlama-1.1B \
-    --output_dir $output_dir \
-    --overwrite_output_dir \
-    --per_device_eval_batch_size 32 \
-    --predict_with_generate \
-    --do_sample False \
-    --fp16
+#python src/train_bash.py \
+#    --stage sft \
+#    --do_predict \
+#    --safety_eval True \
+#    --model_name_or_path $trained_model_path \
+#    --dataset ${dataset_name} \
+#    --template TinyLlama-1.1B \
+#    --output_dir $output_dir \
+#    --overwrite_output_dir \
+#    --per_device_eval_batch_size 32 \
+#    --predict_with_generate \
+#    --do_sample False \
+#    --fp16
 
 
 # evaluate responses over reference responses
