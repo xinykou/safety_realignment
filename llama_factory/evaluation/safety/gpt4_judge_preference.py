@@ -160,7 +160,8 @@ for i in range(total_iterations):
                                     flagA=flagA,
                                     flagB=flagB,
                                     flagE=flagE,
-                                    client=client)
+                                    client=client,
+                                    api_model=api_model)
                 if r != "$ERROR$":
                     break
                 else:
