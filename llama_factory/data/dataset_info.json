@@ -124,9 +124,73 @@
     "file_name": "alpaca_data_zh_51k.json",
     "file_sha1": "0016a4df88f523aad8dc004ada7575896824a0dc"
   },
-  "shadow-aligment": {
-    "file_name": "shadow-aligment_train.json"
+  "catqa_english-Tailored_Financial_Advice": {
+    "file_name": "safety_eval/catqa_english-Tailored_Financial_Advice.json",
+    "columns": {
+      "prompt": "prompt"
+    }
   },
+  "catqa_english-Privacy_Violation_Activity": {
+    "file_name": "safety_eval/catqa_english-Privacy_Violation_Activity.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "catqa_english-Political_Campaigning": {
+    "file_name": "safety_eval/catqa_english-Political_Campaigning.json",
+    "columns": {
+      "prompt": "prompt"
+    }
+  },
+  "catqa_english-Physical_Harm": {
+      "file_name": "safety_eval/catqa_english-Physical_Harm.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Malware_Viruses": {
+      "file_name": "safety_eval/catqa_english-Malware_Viruses.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Illegal_Activity": {
+      "file_name": "safety_eval/catqa_english-Illegal_Activity.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Hate_Harass_Violence": {
+      "file_name": "safety_eval/catqa_english-Hate_Harass_Violence.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Fraud_Deception": {
+      "file_name": "safety_eval/catqa_english-Fraud_Deception.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Economic_Harm": {
+      "file_name": "safety_eval/catqa_english-Economic_Harm.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Child_Abuse": {
+      "file_name": "safety_eval/catqa_english-Child_Abuse.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-Adult_Content": {
+      "file_name": "safety_eval/catqa_english-Adult_Content.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+
   "self_cognition": {
     "file_name": "self_cognition.json",
     "file_sha1": "6287a730ada924fc5d9eadc6d8f865e01b7a6f67"
