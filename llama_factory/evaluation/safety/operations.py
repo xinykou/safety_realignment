@@ -6,9 +6,9 @@ import random
 # os.environ["https_proxy"] = "http://127.0.0.1:27999"
 
 # API setting constants
-API_MAX_RETRY = 5
+API_MAX_RETRY = 1
 CURRENT_RETRY = 0
-API_RETRY_SLEEP = 3
+API_RETRY_SLEEP = 1
 API_ERROR_OUTPUT = "$ERROR$"
 
 

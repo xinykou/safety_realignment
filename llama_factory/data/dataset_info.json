@@ -190,7 +190,24 @@
       "prompt": "prompt"
       }
   },
-
+  "catqa_english-cot": {
+      "file_name": "safety_eval/catqa_english--cot.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-cou": {
+      "file_name": "safety_eval/catqa_english--cou.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
+  "catqa_english-suffix": {
+      "file_name": "safety_eval/catqa_english--suffix.json",
+      "columns": {
+      "prompt": "prompt"
+      }
+  },
   "self_cognition": {
     "file_name": "self_cognition.json",
     "file_sha1": "6287a730ada924fc5d9eadc6d8f865e01b7a6f67"
