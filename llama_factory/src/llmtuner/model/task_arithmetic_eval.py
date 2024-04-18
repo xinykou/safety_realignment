@@ -9,6 +9,7 @@ from tasks.task_arithmetic import task_arithmetic_func
 from tasks.dare import dare_func
 from tasks.ties_merging import ties_merging_func
 from tasks.arithmetic import get_task_wise_weights
+from tasks.weight_averaging import weight_averaging_func
 import shutil
 from safetensors.torch import load_file
 
@@ -112,6 +113,9 @@ for adapter_name_or_path in adapter_name_or_paths:
 
 if task_vectors_merged_methods == 'task_arithmetic':
     merged_task_vector = task_arithmetic_func(task_vectors, task_wise_weights=task_wise_weights_all)
+
+elif task_vectors_merged_methods == 'weight_averaging':
+    merged_task_vector = weight_averaging_func(task_vectors, task_wise_weights=task_wise_weights_all)
 
 elif task_vectors_merged_methods == 'ties_merging':
     merged_task_vector = ties_merging_func(task_vectors, task_wise_weights=task_wise_weights_all)
