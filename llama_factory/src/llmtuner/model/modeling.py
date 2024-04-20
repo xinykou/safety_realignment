@@ -15,6 +15,7 @@ from .tasks.arithmetic import state_dict_sub, get_task_wise_weights
 from .tasks.dare import dare_func
 from .tasks.task_arithmetic import task_arithmetic_func
 from .tasks.ties_merging import ties_merging_func
+from .tasks.weight_averaging import weight_averaging_func
 
 StateDict: TypeAlias = Dict[str, Tensor]
 
@@ -71,6 +72,8 @@ class PeftMaskModel(nn.Module):
             init_values = 0.3
         elif self.task_vectors_merged_methods == "ties_merging":
             init_values = 0.4
+        elif self.task_vectors_merged_methods == "weight_averaging":
+            init_values = 0.3
         elif self.task_vectors_merged_methods is None:
             init_values = 0.3
         else:
@@ -151,7 +154,9 @@ class PeftMaskModel(nn.Module):
         elif self.task_vectors_merged_methods == "dare":
             return dare_func(all_task_vectors,
                              task_wise_weights=self.task_wise_weights,
-                             weight_mask_rate=self.weight_mask_rate)
+                             )  # weight_mask_rate 默认 0.2
+        elif self.task_vectors_merged_methods == "weight_averaging":
+            return weight_averaging_func(all_task_vectors)
         else:
             if len(all_task_vectors) == 1:
                 return all_task_vectors[0]
@@ -349,7 +354,7 @@ class FTMaskModel(nn.Module):
         elif self.task_vectors_merged_methods == "dare":
             return dare_func(all_task_vectors,
                              task_wise_weights=self.task_wise_weights,
-                             weight_mask_rate=self.weight_mask_rate)
+                             ) # weight_mask_rate 默认 0.2
         else:
             if len(all_task_vectors) == 1:
                 return all_task_vectors[0]
