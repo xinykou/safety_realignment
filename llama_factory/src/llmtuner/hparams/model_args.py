@@ -37,7 +37,7 @@ class ModelArguments:
         default=False,
         metadata={"help": "Whether or not to use the binary mask for model inference."},
     )
-    task_vectors_merged_methods: Optional[Literal["task_arithmetic", "ties_merging", "dare"]] = field(
+    task_vectors_merged_methods: Optional[Literal["task_arithmetic", "ties_merging", "dare", "weight_averaging"]] = field(
         default=None,
         metadata={"help": "The methods to merge the task vectors: task_arithmetic, ties_merging or dare"},
     )
