@@ -101,7 +101,7 @@ Automatic Evaluation by GPT3.5-Turbo
 # Citation
 If you find this code useful, please cite the following paper:
 ````
-@inproceedings{liu2022safety,
+@inproceedings{xin2024realingment,
   title={A safety realignment framework via subspace-oriented model fusion
 for large language models},
   author={Xin Yia, Shunfan Zheng, Linlin Wang, Xiaoling Wang and Liang He},
