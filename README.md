@@ -106,7 +106,7 @@ If you find this code useful, please cite the following paper:
 for large language models},
   author={Xin Yia, Shunfan Zheng, Linlin Wang, Xiaoling Wang and Liang He},
   year={2024},
-  url={https://arxiv.org/abs/2202.00000}
+  url={https://arxiv.org/abs/2405.00000}
   }
 ````
 
