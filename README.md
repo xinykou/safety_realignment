@@ -1,5 +1,4 @@
-# A safety realignment framework via subspace-oriented model fusion
-for large language models
+# A safety realignment framework via subspace-oriented model fusion for large language models [(arxiv)](https://arxiv.org/abs/2405.09055)
 ![Alt text](overview.png)
 
 ## 1. SFT on downstream tasks 
