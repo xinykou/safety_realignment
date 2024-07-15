@@ -66,6 +66,8 @@ Automatic Evaluation by GPT3.5-Turbo
 - Evaluation safety for realigned model on "english", run the following command: 
     - `./scripts/multi_realign/safety_eval/task_arithmetic-mask_dpo.sh`,`
 
+
+**Notes: Our fine-tuned models is available on [Huggingface](https://huggingface.co/xinykou)**.
 ## OVERVIEW
 ````
 .
