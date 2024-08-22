@@ -117,7 +117,7 @@
     }
   },
   "or-bench": {
-    "file_name": "safety_eval/or-bench.json",
+    "file_name": "over-refusal/or-bench.json",
     "columns": {
       "prompt": "prompt"
     }
