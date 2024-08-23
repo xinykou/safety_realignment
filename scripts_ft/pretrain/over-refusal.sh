@@ -21,18 +21,18 @@ sft_after_dpo_model_path=../saved_models/pretrain/Safe-TinyLlama-1.1b-pretrain_s
 output_dir=../safety_results/Over-refusal_TinyLlama-pretrain_sft_afer_dpo
 
 ## generate sft responses
-python src/train_bash.py \
-    --stage sft \
-    --do_predict \
-    --safety_eval True \
-    --model_name_or_path $sft_after_dpo_model_path \
-    --dataset or-bench \
-    --template TinyLlama-1.1B \
-    --output_dir $output_dir \
-    --overwrite_output_dir \
-    --per_device_eval_batch_size 16 \
-    --predict_with_generate \
-    --do_sample False
+#python src/train_bash.py \
+#    --stage sft \
+#    --do_predict \
+#    --safety_eval True \
+#    --model_name_or_path $sft_after_dpo_model_path \
+#    --dataset or-bench \
+#    --template TinyLlama-1.1B \
+#    --output_dir $output_dir \
+#    --overwrite_output_dir \
+#    --per_device_eval_batch_size 16 \
+#    --predict_with_generate \
+#    --do_sample False
 
 
 # evaluate responses over reference responses
