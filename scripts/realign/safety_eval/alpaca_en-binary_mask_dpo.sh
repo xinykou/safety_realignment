@@ -47,7 +47,7 @@ python src/train_bash.py \
     --binary_mask True \
     --model_name_or_path $pretained_model_path \
     --task_vector_paths $base_adapter_name_or_path \
-    --mask_module_path ../saved_models/realign/$realign_model_name \
+    --   ../saved_models/realign/$realign_model_name \
     --dataset ${dataset_name} \
     --template WizardLM-7B \
     --finetuning_type lora \
